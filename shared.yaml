@@ -1,0 +1,27 @@
+# note: generally not a good idea to do this all in one file, but hey we're having fun
+apiVersion: v1
+kind: Secret
+metadata:
+  name: chair-common-postgres-config
+type: Opaque
+data:
+  password: bXlzZWNyZXRwYXNzd29yZA==
+
+---
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: shared-postgres-pv-volume
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/mnt/data"
+
+

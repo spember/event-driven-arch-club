@@ -1,0 +1,136 @@
+# ensure you've kubectl applied ../shared.yaml first
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: admin-pv-claim
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 128Mi
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: admin-postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: admin-postgres
+  template:
+    metadata:
+      labels:
+        app: admin-postgres
+    spec:
+      volumes:
+        - name: admin-postgres-pv-storage
+          persistentVolumeClaim:
+            claimName: admin-pv-claim
+      containers:
+        - name: postgres
+          image: postgres:14.2-alpine
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: chairs-admin
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: chair-common-postgres-config
+                  key: password
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/data
+              name: admin-postgres-pv-storage
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: admin-postgres
+  labels:
+    app: admin-postgres
+spec:
+  type: NodePort
+  ports:
+    - port: 5432
+  selector:
+    app: admin-postgres
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chairs-admin
+  labels:
+    app: chairs-admin
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: chairs-admin
+  template:
+    metadata:
+      labels:
+        app: chairs-admin
+    spec:
+      containers:
+        - name: app
+          image: eventclub/chair-admin:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+              name: admin-port
+          env:
+            - name: SPRING_DATASOURCE_USERNAME
+              value: postgres
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: chair-common-postgres-config
+                  key: password
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:postgresql://admin-postgres:5432/chairs-admin
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: chairs-admin
+  labels:
+    app: chairs-admin
+spec:
+  type: LoadBalancer #so we can reach it from the outside alongside using `minikube tunnel`
+  selector:
+    app: chairs-admin
+  ports:
+    - protocol: TCP
+      port: 8001
+      targetPort: admin-port
+
+
+# minikube start
+# minikube addons enable ingress
+# apply
+# minikube tunnel
+
+
+# todo:
+# dupe chairfront
+# add call to it
+# add test container
+# make repo
+#
+
+
+
