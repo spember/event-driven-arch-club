@@ -28,7 +28,8 @@ public class ChairRegistrationController {
      * @return
      */
     @PostMapping("/register")
-    public Chair create(@RequestBody UpdateChairFromUpstreamCommand command) {
-        return this.chairfrontCatalogService.create(command);
+    public Boolean create(@RequestBody UpdateChairFromUpstreamCommand command) {
+        Chair created = this.chairfrontCatalogService.create(command);
+        return created != null;
     }
 }

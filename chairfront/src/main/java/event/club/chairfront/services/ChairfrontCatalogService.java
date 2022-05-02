@@ -47,12 +47,13 @@ public class ChairfrontCatalogService {
 
     public Chair create(UpdateChairFromUpstreamCommand command) {
         // should throw invalid exceptions or return a -Result class
-        log.info("About to save with {}, {}, {}", command.getRequestedSku(), command.getRequestedName(), command.getRequestedDescription());
+        log.info("About to save with {}, {}, {}, {}", command.getId(), command.getSku(), command.getName(), command.getDescription());
         Chair target = new Chair(
+                command.getId(),
                 1,
-                command.getRequestedSku(),
-                command.getRequestedName(),
-                command.getRequestedDescription(),
+                command.getSku(),
+                command.getName(),
+                command.getDescription(),
                 0
         );
         try {

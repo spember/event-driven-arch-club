@@ -15,7 +15,6 @@ import java.util.UUID;
 public class Chair {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
     private int version = 0;
 
@@ -29,7 +28,8 @@ public class Chair {
 
     protected Chair() {}
 
-    public Chair(int version, String sku, String name, String description, int unitsOnHand) {
+    public Chair(UUID id, int version, String sku, String name, String description, int unitsOnHand) {
+        this.id = id;
         this.version = version;
         this.sku = sku;
         this.name = name;

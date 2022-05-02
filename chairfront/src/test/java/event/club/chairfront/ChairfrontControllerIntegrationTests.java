@@ -10,7 +10,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
+import static junit.framework.Assert.assertTrue;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotNull;
 
@@ -36,17 +38,18 @@ public class ChairfrontControllerIntegrationTests extends BaseSpringIntegrationT
         String name = "My First Chair";
         String description = "This is one great chair!";
 
-        Chair tested = this.restTemplate.postForObject(registrationUrl(), new UpdateChairFromUpstreamCommand(
+        UUID id = UUID.randomUUID();
+        Boolean result = this.restTemplate.postForObject(registrationUrl(), new UpdateChairFromUpstreamCommand(
+                id,
                 sku,
                 name,
                 description
-        ), Chair.class);
+        ), Boolean.class);
 
-        assertEquals(tested.getVersion(), 1);
-        assertEquals(tested.getSku(), sku);
-        assertNotNull(tested.getId());
+        assertTrue(result);
 
-        Chair loaded = this.restTemplate.getForObject(catalogUrl()+"/"+tested.getId(), Chair.class);
+        
+        Chair loaded = this.restTemplate.getForObject(catalogUrl()+"/"+id, Chair.class);
         assertNotNull(loaded);
         assertEquals(loaded.getVersion(), 1);
         assertEquals(loaded.getSku(), sku);
@@ -62,13 +65,13 @@ public class ChairfrontControllerIntegrationTests extends BaseSpringIntegrationT
         String name = "Classic Rocker";
         String description = "This is one great chair!";
 
-        Chair tested = this.restTemplate.postForObject(registrationUrl(), new UpdateChairFromUpstreamCommand(
+        Boolean result = this.restTemplate.postForObject(registrationUrl(), new UpdateChairFromUpstreamCommand(
+                UUID.randomUUID(),
                 sku,
                 name,
                 description
-        ), Chair.class);
+        ), Boolean.class);
 
-        assertEquals(tested.getVersion(), 1);
 
         assertEquals(this.restTemplate.getForObject(catalogUrl()+"?includeAll=false", Chair[].class).length, 0);
 
