@@ -1,0 +1,121 @@
+# ensure you've kubectl applied ../shared.yaml first
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: chairfront-pv-claim
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 128Mi
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chairfront-postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: chairfront-postgres
+  template:
+    metadata:
+      labels:
+        app: chairfront-postgres
+    spec:
+      volumes:
+        - name: chairfront-postgres-pv-storage
+          persistentVolumeClaim:
+            claimName: chairfront-pv-claim
+      containers:
+        - name: postgres
+          image: postgres:14.2-alpine
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: chairfront
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: chair-common-postgres-config
+                  key: password
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/data
+              name: chairfront-postgres-pv-storage
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: chairfront-postgres
+  labels:
+    app: chairfront-postgres
+spec:
+  type: NodePort
+  ports:
+    - port: 5432
+  selector:
+    app: chairfront-postgres
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chairfront
+  labels:
+    app: chairfront
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: chairfront
+  template:
+    metadata:
+      labels:
+        app: chairfront
+    spec:
+      containers:
+        - name: app
+          image: eventclub/chairfront:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+              name: chairfront-port
+          env:
+            - name: SPRING_DATASOURCE_USERNAME
+              value: postgres
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: chair-common-postgres-config
+                  key: password
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:postgresql://chairfront-postgres:5432/chairfront
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: chairfront
+  labels:
+    app: chairfront
+spec:
+  type: LoadBalancer
+  selector:
+    app: chairfront
+  ports:
+    - protocol: TCP
+      port: 8002
+      targetPort: chairfront-port
+
+

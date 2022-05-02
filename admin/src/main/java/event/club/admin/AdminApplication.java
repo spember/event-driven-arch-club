@@ -12,21 +12,6 @@ public class AdminApplication {
 
 	public static void main(String[] args) {
 		SpringApplication.run(AdminApplication.class, args);
-		log.info("Welcome to the World of Chairs");
+		log.info("The Chair Administrator has started!");
 	}
-
-	/*
-	todo:
-	create sample Chair class and service
-	create sample Jooq read and write into postgres, and test it
-
-	duplicate for 'chairfront'
-
-	run in k8s
-
-	add a readme
-
-	add kafka, and sample message consumer...
-
-	 */
 }

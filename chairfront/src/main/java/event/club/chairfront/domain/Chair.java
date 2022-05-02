@@ -1,4 +1,4 @@
-package event.club.admin.domain;
+package event.club.chairfront.domain;
 
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -7,8 +7,9 @@ import javax.persistence.Id;
 import java.util.UUID;
 
 /**
- * Basic Domain Entity for our products. Represents a high-level 'type' of chair that we sell (as opposed to individual
- * instances of a chair)
+ * Chairfront's understanding of the 'Chair' domain entity.
+ * Chairfront needs to maintain some understanding of the inventory levels and whether the thing is in stock. it may
+ * also contain information beyond the up stream data, like merchandising / marketing information.
  */
 @Entity
 public class Chair {
@@ -23,14 +24,17 @@ public class Chair {
     private String name = "";
 
     private String description = "";
-    
+
+    private int unitsOnHand = 0;
+
     protected Chair() {}
 
-    public Chair(int version, String sku, String name, String description) {
+    public Chair(int version, String sku, String name, String description, int unitsOnHand) {
         this.version = version;
         this.sku = sku;
         this.name = name;
         this.description = description;
+        this.unitsOnHand = unitsOnHand;
     }
 
     public UUID getId() {
@@ -67,5 +71,9 @@ public class Chair {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public int getUnitsOnHand() {
+        return unitsOnHand;
     }
 }
