@@ -6,7 +6,10 @@ import event.club.admin.repositories.JpaChairRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,10 +23,16 @@ public class ChairManagementService {
 
     private final JpaChairRepository chairRepository;
 
+    private final RestTemplate client = new RestTemplate();
+
+    private final String chairfrontLocation;
+
     @Autowired
-    public ChairManagementService(JpaChairRepository chairRepository) {
+    public ChairManagementService(JpaChairRepository chairRepository, @Value("${chairfront.location}") String chairfront) {
         this.chairRepository = chairRepository;
+        this.chairfrontLocation = "http://"+chairfront;
         log.info("Initialized the chair service");
+        log.info("Chairfront is located at {}", chairfront);
     }
 
     public Optional<Chair> get(UUID chairId) {
@@ -45,13 +54,13 @@ public class ChairManagementService {
                 command.getRequestedName(),
                 command.getRequestedDescription()
         );
-        try {
-            // WOW this is sure taking a long time!
-            Thread.sleep(2500);
-        } catch(InterruptedException exception) {
-            log.error("Could not sleep", exception);
-        }
-        return this.chairRepository.save(target);
+        Chair saved = this.chairRepository.save(target);
+
+        log.info("Chair {} successfully saved, updating downstream...", saved.getId());
+        log.info("Calling chairfront at {}", chairfrontLocation);
+        ResponseEntity<Boolean> result = client.postForEntity(chairfrontLocation+"/register", command, Boolean.class);
+        log.info("Did we save from chairfront? {}", result.getStatusCode());
+        return saved;
 
     }
 

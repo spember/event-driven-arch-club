@@ -48,7 +48,7 @@ public class ChairfrontControllerIntegrationTests extends BaseSpringIntegrationT
 
         assertTrue(result);
 
-        
+
         Chair loaded = this.restTemplate.getForObject(catalogUrl()+"/"+id, Chair.class);
         assertNotNull(loaded);
         assertEquals(loaded.getVersion(), 1);

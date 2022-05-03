@@ -75,7 +75,7 @@ metadata:
   labels:
     app: chairs-admin
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: chairs-admin
@@ -117,20 +117,6 @@ spec:
     - protocol: TCP
       port: 8001
       targetPort: admin-port
-
-
-# minikube start
-# minikube addons enable ingress
-# apply
-# minikube tunnel
-
-
-# todo:
-# dupe chairfront
-# add call to it
-# add test container
-# make repo
-#
 
 
 

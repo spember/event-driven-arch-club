@@ -28,6 +28,9 @@ dependencies {
 	testImplementation 'org.testcontainers:junit-jupiter'
 	testImplementation 'org.testcontainers:kafka'
 	testImplementation 'org.testcontainers:postgresql'
+	testImplementation "org.testcontainers:mockserver"
+	testImplementation "org.mock-server:mockserver-client-java:5.5.4"
+
 }
 
 dependencyManagement {

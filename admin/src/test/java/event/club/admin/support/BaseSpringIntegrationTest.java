@@ -34,4 +34,8 @@ public abstract class BaseSpringIntegrationTest {
             .waitingFor(Wait.forListeningPort());
 
 
+    @Container
+    public static ChairfrontMockContainer chairfrontMockContainer = ChairfrontMockContainer.getInstance();
+
+
 }
