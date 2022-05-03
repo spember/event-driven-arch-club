@@ -1,72 +1,4 @@
 # ensure you've kubectl applied ../shared.yaml first
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: admin-pv-claim
-spec:
-  storageClassName: manual
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 128Mi
-
----
-
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: admin-postgres
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: admin-postgres
-  template:
-    metadata:
-      labels:
-        app: admin-postgres
-    spec:
-      volumes:
-        - name: admin-postgres-pv-storage
-          persistentVolumeClaim:
-            claimName: admin-pv-claim
-      containers:
-        - name: postgres
-          image: postgres:14.2-alpine
-          imagePullPolicy: IfNotPresent
-          ports:
-            - containerPort: 5432
-          env:
-            - name: POSTGRES_DB
-              value: chairs-admin
-            - name: POSTGRES_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: chair-common-postgres-config
-                  key: password
-            - name: PGDATA
-              value: /var/lib/postgresql/data/pgdata
-          volumeMounts:
-            - mountPath: /var/lib/postgresql/data
-              name: admin-postgres-pv-storage
-
----
-
-apiVersion: v1
-kind: Service
-metadata:
-  name: admin-postgres
-  labels:
-    app: admin-postgres
-spec:
-  type: NodePort
-  ports:
-    - port: 5432
-  selector:
-    app: admin-postgres
-
----
 
 apiVersion: apps/v1
 kind: Deployment
@@ -100,7 +32,9 @@ spec:
                   name: chair-common-postgres-config
                   key: password
             - name: SPRING_DATASOURCE_URL
-              value: jdbc:postgresql://admin-postgres:5432/chairs-admin
+              value: jdbc:postgresql://eventclub-postgres:5432/chairs-admin
+            - name: CHAIRFRONT_LOCATION
+              value: chairfront:8002
 ---
 
 apiVersion: v1

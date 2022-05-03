@@ -12,16 +12,92 @@ data:
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: shared-postgres-pv-volume
+  name: eventclub-postgres-pv
   labels:
     type: local
 spec:
   storageClassName: manual
   capacity:
-    storage: 1Gi
+    storage: 256Mi
   accessModes:
     - ReadWriteOnce
   hostPath:
     path: "/mnt/data"
+
+--- 
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: eventclub-pv-claim
+spec:
+  storageClassName: manual
+  volumeName: eventclub-postgres-pv
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 256Mi
+
+---
+
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: eventclub-postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: eventclub-postgres
+  template:
+    metadata:
+      labels:
+        app: eventclub-postgres
+    spec:
+      volumes:
+        - name: eventclub-postgres-pv-storage
+          persistentVolumeClaim:
+            claimName: eventclub-pv-claim
+      containers:
+        - name: postgres
+          image: postgres:14.2-alpine
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: chairfront
+
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: chair-common-postgres-config
+                  key: password
+
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/data
+              name: eventclub-postgres-pv-storage
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: eventclub-postgres
+  labels:
+    app: eventclub-postgres
+spec:
+  type: NodePort
+  ports:
+    - port: 5432
+  selector:
+    app: eventclub-postgres
+
+
 
 

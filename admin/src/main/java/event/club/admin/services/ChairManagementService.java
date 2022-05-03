@@ -58,7 +58,7 @@ public class ChairManagementService {
 
         log.info("Chair {} successfully saved, updating downstream...", saved.getId());
         log.info("Calling chairfront at {}", chairfrontLocation);
-        ResponseEntity<Boolean> result = client.postForEntity(chairfrontLocation+"/register", command, Boolean.class);
+        ResponseEntity<Boolean> result = client.postForEntity(chairfrontLocation+"/register", target, Boolean.class);
         log.info("Did we save from chairfront? {}", result.getStatusCode());
         return saved;
 

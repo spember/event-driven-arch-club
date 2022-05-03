@@ -1,0 +1,20 @@
+# run after the database has spun up
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: createadmin
+spec:
+  template:
+    spec:
+      containers:
+      - name: createadmin
+        image: bitnami/postgresql:latest
+        command: ["createdb"]
+        args: ["-h","eventclub-postgres", "-U", "postgres", "chairs-admin" ]
+        env:
+        - name: PGPASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: chair-common-postgres-config
+              key: password
+      restartPolicy: Never
