@@ -35,6 +35,16 @@ You should now be able to use commands like `kubectl get svc` to see the public 
 * `kubectl get pods` - see all your running pods, a great way to spot check everything's working
 * `kubectl logs <pod>` - ideal for spot checking that things are working
 * `minikube dashboard` - or just spawn the UI to peek into the system 
+* `kubectl rollout restart deployment <deployment name>` - used after you update an app and rebuild the docker image, restart all pods
+
+
+### Basic workflow:
+
+1. make changes in your java app
+2. test using `./gradlew clean test`
+3. package via `./gradlew build` - jars should appear in `./build/libs`
+4. (in minikube terminal window) - build docker file
+5. rolling restart the deployment
 
 ---
 
@@ -58,5 +68,6 @@ The problem is that we have a tight coupling between the Admin service and Chair
 
 We want to see if making this call Asynchronous provides better performance in the near term. (We need to crawl before we can run) Research mechanisms on how to execute asynchronous behaviors within Java. For example, [Completable Futures](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html) seem promising, as do tools like [RxJava](https://github.com/ReactiveX/RxJava).
 
-_Basic Challenge_: Update the Admin service so that it's call to Chairfront is now done asynchronously
+_Basic Challenge_: Update the Admin service so that it's call to Chairfront is now done asynchronously.
+
 _Advanced Challenge_: Write an Integration test to prove it.
