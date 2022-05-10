@@ -28,7 +28,7 @@ public class ChairControllerIntegrationTests extends BaseSpringIntegrationTest {
     }
 
     @Test
-    public void creationShouldWork() {
+    public void creationShouldWork() throws InterruptedException {
         String sku = "CH-01-MA";
         String name = "My First Chair";
         String description = "This is one great chair!";
@@ -43,6 +43,8 @@ public class ChairControllerIntegrationTests extends BaseSpringIntegrationTest {
         assertEquals(tested.getSku(), sku);
         assertNotNull(tested.getId());
 
+        // we should wait a bit. this is pretty gross though, sleeps when testing async bits are wild
+        Thread.sleep(1500);
         Chair loaded = this.restTemplate.getForObject(localUrl()+"/"+tested.getId(), Chair.class);
         assertNotNull(loaded);
         assertEquals(loaded.getVersion(), 1);

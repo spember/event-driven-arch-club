@@ -14,7 +14,6 @@ import java.util.UUID;
 public class Chair {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
     private int version = 0;
 
@@ -27,6 +26,9 @@ public class Chair {
     protected Chair() {}
 
     public Chair(int version, String sku, String name, String description) {
+        // we generate the ids 'by hand' here, as we want to alert callers to the future id that *will* exist
+        // after an async save occurs. In real life we might have a 'ticket' system or other id generator
+        this.id = UUID.randomUUID();
         this.version = version;
         this.sku = sku;
         this.name = name;

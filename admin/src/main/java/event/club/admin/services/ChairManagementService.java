@@ -15,6 +15,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.FutureTask;
 
 @Service
 public class ChairManagementService {
@@ -27,10 +29,17 @@ public class ChairManagementService {
 
     private final String chairfrontLocation;
 
+    private final ExecutorService threadPool;
+
     @Autowired
-    public ChairManagementService(JpaChairRepository chairRepository, @Value("${chairfront.location}") String chairfront) {
+    public ChairManagementService(
+            JpaChairRepository chairRepository,
+            @Value("${chairfront.location}") String chairfront,
+            ExecutorService executorService
+    ) {
         this.chairRepository = chairRepository;
         this.chairfrontLocation = "http://"+chairfront;
+        this.threadPool = executorService;
         log.info("Initialized the chair service");
         log.info("Chairfront is located at {}", chairfront);
     }
@@ -48,20 +57,44 @@ public class ChairManagementService {
     public Chair create(UpdateChairCommand command) {
         // should throw invalid exceptions or return a -Result class
         log.info("About to save with {}, {}, {}", command.getRequestedSku(), command.getRequestedName(), command.getRequestedDescription());
+//        threadPool.submit()
         Chair target = new Chair(
                 1,
                 command.getRequestedSku(),
                 command.getRequestedName(),
                 command.getRequestedDescription()
         );
-        Chair saved = this.chairRepository.save(target);
+//        log.info("About to save a target with id of " + target.getId());
+//        Chair saved = this.chairRepository.save(target);
+//
+//        log.info("Chair {} successfully saved, updating downstream...", saved.getId());
+//        log.info("Calling chairfront at {}", chairfrontLocation);
+//        ResponseEntity<Boolean> result = client.postForEntity(chairfrontLocation+"/register", target, Boolean.class);
+//        log.info("Did we save from chairfront? {}", result.getStatusCode());
+//        return saved;
+        threadPool.submit(new ChairPersistTask(target, chairRepository));
+        log.info("Returning!");
+        return target;
+    }
 
-        log.info("Chair {} successfully saved, updating downstream...", saved.getId());
-        log.info("Calling chairfront at {}", chairfrontLocation);
-        ResponseEntity<Boolean> result = client.postForEntity(chairfrontLocation+"/register", target, Boolean.class);
-        log.info("Did we save from chairfront? {}", result.getStatusCode());
-        return saved;
+    private class ChairPersistTask implements Runnable {
 
+        private final Chair toSave;
+        private final JpaChairRepository chairRepository;
+
+        public ChairPersistTask(Chair toSave, JpaChairRepository chairRepository) {
+            this.toSave = toSave;
+            this.chairRepository = chairRepository;
+        }
+
+        @Override
+        public void run() {
+            Chair saved = this.chairRepository.save(toSave);
+            log.info("Chair {} successfully saved, updating downstream...", saved.getId());
+            log.info("Calling chairfront at {}", chairfrontLocation);
+            ResponseEntity<Boolean> result = client.postForEntity(chairfrontLocation+"/register", saved, Boolean.class);
+            log.info("Did we save from chairfront? {}", result.getStatusCode());
+        }
     }
 
 }
