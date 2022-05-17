@@ -30,6 +30,7 @@ dependencies {
 	testImplementation 'org.testcontainers:postgresql'
 	testImplementation "org.testcontainers:mockserver"
 	testImplementation "org.mock-server:mockserver-client-java:5.5.4"
+	testImplementation "org.testcontainers:kafka:1.17.1"
 
 }
 

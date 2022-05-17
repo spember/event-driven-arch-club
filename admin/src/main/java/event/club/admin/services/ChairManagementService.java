@@ -8,6 +8,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.messaging.Message;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -53,25 +55,17 @@ public class ChairManagementService {
         this.chairRepository.findAll().forEach(chairs::add);
         return chairs;
     }
-
+    
     public Chair create(UpdateChairCommand command) {
         // should throw invalid exceptions or return a -Result class
         log.info("About to save with {}, {}, {}", command.getRequestedSku(), command.getRequestedName(), command.getRequestedDescription());
-//        threadPool.submit()
         Chair target = new Chair(
                 1,
                 command.getRequestedSku(),
                 command.getRequestedName(),
                 command.getRequestedDescription()
         );
-//        log.info("About to save a target with id of " + target.getId());
-//        Chair saved = this.chairRepository.save(target);
-//
-//        log.info("Chair {} successfully saved, updating downstream...", saved.getId());
-//        log.info("Calling chairfront at {}", chairfrontLocation);
-//        ResponseEntity<Boolean> result = client.postForEntity(chairfrontLocation+"/register", target, Boolean.class);
-//        log.info("Did we save from chairfront? {}", result.getStatusCode());
-//        return saved;
+
         threadPool.submit(new ChairPersistTask(target, chairRepository));
         log.info("Returning!");
         return target;

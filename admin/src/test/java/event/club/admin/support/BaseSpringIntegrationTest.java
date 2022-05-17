@@ -37,5 +37,8 @@ public abstract class BaseSpringIntegrationTest {
     @Container
     public static ChairfrontMockContainer chairfrontMockContainer = ChairfrontMockContainer.getInstance();
 
+    @Container
+    public static SpringKafkaContainer springKafkaContainer = SpringKafkaContainer.getInstance();
+
 
 }
