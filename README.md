@@ -16,16 +16,18 @@ Working with this project requires the following technologies:
 
 ## setup
 
+Note: most of these steps should be done in `terminal window 1`, with the exception of building the repos (`terminal window 2`) and running the minikube tunnel (`terminal window 3`).
+
 1. `minikube start`
 1. `minikube addons enable ingress`
 1. `eval $(minikube -p minikube docker-env)`
 1. `kubectl apply -f shared.yaml`
-1. build the repos (in a separate terminal window, cd into the sub folders and `./gradlew build`)
-1. build the images: `docker build -t eventclub/chair-admin admin/.` and `docker build -t eventclub/chairfront chairfront/.` _Note_: ensure you've run the eval command above, first. This scopes your terminal window to use Minikube's docker environment and not your laptop's. This also means that builds of the apps should be done in another terminal.
+1. build the repos (in `terminal window 2`: cd into the sub folders and `./gradlew build`)
+1. build the docker images: `docker build -t eventclub/chair-admin admin/.` and `docker build -t eventclub/chairfront chairfront/.` _Note_: ensure you've run the eval command above, first. This scopes your terminal window to use Minikube's docker environment and not your laptop's. This also means that builds of the apps should be done in another terminal (`terminal window 2`).
 1. `kubectl apply -f jobs.yaml`
 1. `kubectl apply -f chairfront/kubernetes.yaml`
 1. `kubectl apply -f admin/kubernetes.yaml`
-1. `minikube tunnel` (in a seprate terminal window)
+1. `minikube tunnel` (in `terminal window 3`)
 
 You should now be able to use commands like `kubectl get svc` to see the public ips of the two java services (e.g. localhost:8001).
 
@@ -41,9 +43,9 @@ You should now be able to use commands like `kubectl get svc` to see the public 
 ### Basic workflow:
 
 1. make changes in your java app
-2. test using `./gradlew clean test`
-3. package via `./gradlew build` - jars should appear in `./build/libs`
-4. (in minikube terminal window) - build docker file
+2. test using `./gradlew clean test` in `terminal window 2`
+3. package via `./gradlew build` in `terminal window 2` - jars should appear in `./build/libs`
+4. build the docker images
 5. rolling restart the deployment
 
 ---
