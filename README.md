@@ -21,10 +21,12 @@ Note: most of these steps should be done in `terminal window 1`, with the except
 1. `minikube start`
 1. `minikube addons enable ingress`
 1. `eval $(minikube -p minikube docker-env)`
-1. `kubectl apply -f shared.yaml`
+1. `kubectl apply -f 00-shared.yaml`
+1. `kubectl apply -f 01-zookeeper.yaml`. Wait until it's up and running by checking `kubectl --namespace=kafka get pods`
+1. `kubectl apply -f 02-kafka.yaml`
+1. `kubectl apply -f 03-jobs.yaml`
 1. build the repos (in `terminal window 2`: cd into the sub folders and `./gradlew build`)
 1. build the docker images: `docker build -t eventclub/chair-admin admin/.` and `docker build -t eventclub/chairfront chairfront/.` _Note_: ensure you've run the eval command above, first. This scopes your terminal window to use Minikube's docker environment and not your laptop's. This also means that builds of the apps should be done in another terminal (`terminal window 2`).
-1. `kubectl apply -f jobs.yaml`
 1. `kubectl apply -f chairfront/kubernetes.yaml`
 1. `kubectl apply -f admin/kubernetes.yaml`
 1. `minikube tunnel` (in `terminal window 3`)
@@ -47,6 +49,19 @@ You should now be able to use commands like `kubectl get svc` to see the public 
 3. package via `./gradlew build` in `terminal window 2` - jars should appear in `./build/libs`
 4. build the docker images
 5. rolling restart the deployment
+
+
+### Local Resources
+
+If the minikube environment is operating sluggishly, you may need to give it more resources. Increase the available memory and cpu that you provide to Docker Desktop, and then:
+
+```
+$ minikube stop
+$ minikube delete
+$ minikube config set memory < a few gigs, as MB... e.g. 8192>
+$ minikube config set cpus < maybe more than 1?>
+$ minikube start
+```
 
 ---
 

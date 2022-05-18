@@ -35,6 +35,8 @@ spec:
               value: jdbc:postgresql://eventclub-postgres:5432/chairs-admin
             - name: CHAIRFRONT_LOCATION
               value: chairfront:8002
+            - name: KAFKA_BOOTSTRAP
+              value: PLAINTEXT://kafka-service.kafka.svc.cluster.local:9092
 ---
 
 apiVersion: v1
