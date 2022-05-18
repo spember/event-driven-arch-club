@@ -18,3 +18,23 @@ spec:
               name: chair-common-postgres-config
               key: password
       restartPolicy: Never
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: createchairhouse
+spec:
+  template:
+    spec:
+      containers:
+      - name: createchairhouse
+        image: bitnami/postgresql:latest
+        command: ["createdb"]
+        args: ["-h","eventclub-postgres", "-U", "postgres", "chairhouse" ]
+        env:
+        - name: PGPASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: chair-common-postgres-config
+              key: password
+      restartPolicy: Never

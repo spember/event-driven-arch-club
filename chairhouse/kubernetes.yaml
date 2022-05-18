@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chairhouse
+  labels:
+    app: chairhouse
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: chairhouse
+  template:
+    metadata:
+      labels:
+        app: chairhouse
+    spec:
+      containers:
+        - name: app
+          image: eventclub/chairhouse:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+              name: chairhouse-port
+          env:
+            - name: SPRING_DATASOURCE_USERNAME
+              value: postgres
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: chair-common-postgres-config
+                  key: password
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:postgresql://eventclub-postgres:5432/chairhouse
+            - name: KAFKA_BOOTSTRAP
+              value: PLAINTEXT://kafka-service.kafka.svc.cluster.local:9092
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: chairhouse
+  labels:
+    app: chairhouse
+spec:
+  type: LoadBalancer
+  selector:
+    app: chairhouse
+  ports:
+    - protocol: TCP
+      port: 8003
+      targetPort: chairhouse-port
+
+
+
