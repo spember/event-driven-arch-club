@@ -23,7 +23,7 @@ Note: most of these steps should be done in `terminal window 1`, with the except
 1. `eval $(minikube -p minikube docker-env)`
 1. `kubectl apply -f shared.yaml`
 1. build the repos (in `terminal window 2`: cd into the sub folders and `./gradlew build`)
-1. build the docker images: `docker build -t eventclub/chair-admin admin/.` and `docker build -t eventclub/chairfront chairfront/.` _Note_: ensure you've run the eval command above, first. This scopes your terminal window to use Minikube's docker environment and not your laptop's. This also means that builds of the apps should be done in another terminal.
+1. build the docker images: `docker build -t eventclub/chair-admin admin/.` and `docker build -t eventclub/chairfront chairfront/.` _Note_: ensure you've run the eval command above, first. This scopes your terminal window to use Minikube's docker environment and not your laptop's. This also means that builds of the apps should be done in another terminal (`terminal window 2`).
 1. `kubectl apply -f jobs.yaml`
 1. `kubectl apply -f chairfront/kubernetes.yaml`
 1. `kubectl apply -f admin/kubernetes.yaml`
