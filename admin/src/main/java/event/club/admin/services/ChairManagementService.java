@@ -8,8 +8,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
-import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.messaging.Message;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -18,7 +16,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.FutureTask;
 
 @Service
 public class ChairManagementService {
@@ -32,6 +29,8 @@ public class ChairManagementService {
     private final String chairfrontLocation;
 
     private final ExecutorService threadPool;
+
+    private List<InternalNotificationSubscriber<Chair>> chairNotificationSubscribers = new ArrayList<>();
 
     @Autowired
     public ChairManagementService(
@@ -67,8 +66,19 @@ public class ChairManagementService {
         );
 
         threadPool.submit(new ChairPersistTask(target, chairRepository));
-        log.info("Returning!");
+        log.debug("Chair persistence work submitted to threadPool");
         return target;
+    }
+
+    /**
+     * Register a subscriber to be notified when a Chair is manipulated.
+     *
+     * @param subscriber
+     */
+    public void register(InternalNotificationSubscriber<Chair> subscriber) {
+        // in a real system, the type passed to subscribers should be some sort of context class which contains
+        // additional information about the Chair that was changed (e.g. was it just created).
+        this.chairNotificationSubscribers.add(subscriber);
     }
 
     private class ChairPersistTask implements Runnable {
@@ -88,6 +98,9 @@ public class ChairManagementService {
             log.info("Calling chairfront at {}", chairfrontLocation);
             ResponseEntity<Boolean> result = client.postForEntity(chairfrontLocation+"/register", saved, Boolean.class);
             log.info("Did we save from chairfront? {}", result.getStatusCode());
+            // notify subscribers after the system completes this task
+            chairNotificationSubscribers.forEach(subscriber -> subscriber.handle(toSave));
+            log.debug("Subscriber notification complete");
         }
     }
 

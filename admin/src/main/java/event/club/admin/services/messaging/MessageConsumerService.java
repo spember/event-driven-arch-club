@@ -1,5 +1,6 @@
 package event.club.admin.services.messaging;
 
+import event.club.admin.services.InternalNotificationSubscriber;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.kafka.clients.admin.NewTopic;
@@ -23,7 +24,7 @@ public class MessageConsumerService {
 
     private static Logger log = LoggerFactory.getLogger(MessageConsumerService.class);
 
-    private final Map<String, List<MessageSubscriber<String>>> registeredSubscribers = new HashMap<>();
+    private final Map<String, List<InternalNotificationSubscriber<String>>> registeredSubscribers = new HashMap<>();
 
     @KafkaListener(topics = Topics.CHAIRS)
     public void listenGroupFoo(String message) {
@@ -34,7 +35,7 @@ public class MessageConsumerService {
         }
     }
 
-    public void register(String topic, MessageSubscriber<String> subscriber) {
+    public void register(String topic, InternalNotificationSubscriber<String> subscriber) {
         if (!registeredSubscribers.containsKey(topic)) {
             registeredSubscribers.put(topic, new ArrayList<>());
         }

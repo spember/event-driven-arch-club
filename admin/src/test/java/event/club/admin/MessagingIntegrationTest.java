@@ -2,7 +2,7 @@ package event.club.admin;
 
 import event.club.admin.services.messaging.MessageConsumerService;
 import event.club.admin.services.messaging.MessageProducerService;
-import event.club.admin.services.messaging.MessageSubscriber;
+import event.club.admin.services.InternalNotificationSubscriber;
 import event.club.admin.support.BaseSpringIntegrationTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,7 +24,7 @@ public class MessagingIntegrationTest extends BaseSpringIntegrationTest {
 
         CountDownLatch latch = new CountDownLatch(1);
 
-        consumerService.register("chair-updates", new MessageSubscriber<String>() {
+        consumerService.register("chair-updates", new InternalNotificationSubscriber<String>() {
             @Override
             public void handle(String value) {
                 latch.countDown();
