@@ -55,7 +55,7 @@ public class KafkaConfiguration {
                 bootstrapServers);
         props.put(
                 ConsumerConfig.GROUP_ID_CONFIG,
-                "chair-admin");
+                "chairhouse");
         props.put(
                 ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
                 StringDeserializer.class);

@@ -92,23 +92,22 @@ During a recent daily sit-down meeting (stand-ups are frowned upon here at CC) o
 
 The problem here is that we want to increase our Kafka presence, eliminate the cross-service HTTP calls, and ensure that our "downstream" services (ChairHouse and don't forget Chairfront) are consuming data published by the Admin application. But how?
 
+> Note: the Kafka related operations are making use of quite a lot of Spring Reactor specific code, which should make things a bit friendlier, but also hides some of the underlying Kafka primitives.
+
 ### Task at hand:
 
-We want to see if making this call Asynchronous provides better performance in the near term. (We need to crawl before we can run) Research mechanisms on how to execute asynchronous behaviors within Java. For example, [Completable Futures](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html) seem promising, as do tools like [RxJava](https://github.com/ReactiveX/RxJava).
-
 The challenge is ramping up. There's several high-level things we want to address:
-
 
 * Someone thoughtfully added Kafka-related code to Admin and ChairHouse (Take a look at `MessageConsumerService` and `MessageProducerService` in both). However, this has not been integrated into Chairfront. 
 * Chairfront's `kubernetes.yaml` will also need to be updated to point at the broker
 * Admin will need to publish messages when it's updated, and then Chairfront and Chairhouse will need to listen.
 
-
-_Basic Challenge_: Research on how to consume messages from Kafka streams, as well as how to publish them. The Consumers and Publishers are currently set to send and receive Strings. Is this the best way to do this? Update the services to accomplish the high level needs above, and fully sever the HTTP request that Admin makes to Chairfront. In other words, when a Chair is created in Admin it should also be reflected in Chairfront and Chairhouse... all by the magic of Kafka.
+_Basic Challenge_: Research on how to consume messages from Kafka streams, as well as how to publish them. The Consumers and Publishers are currently set to send and receive Strings. Is this the best way to do this? It might be fine, but you'll need some method for translating the data that is received 'off of the wire' from Kafka into a class your code can understand. We've heard great things about [Jackson's ObjectMapper](https://www.baeldung.com/jackson-object-mapper-tutorial). Update the services to accomplish the high level needs above, and fully sever the HTTP request that Admin makes to Chairfront. In other words, when a Chair is created in Admin it should also be reflected in Chairfront and Chairhouse... all by the magic of Kafka.
 
 _Advanced Challenge_: Explore what Tests start to look like when you just publish Messages (i.e. Admin and Chairhouse now have a Kafka TestContainer). Convert the data coming up off the Kafka stream by our Consumer into some internal class before processing. 
 
 
-> Note: the Kafka related operations are making use of quite a lot of Spring Reactor specific code, which should make things a bit friendlier, but also hides some of the underlying Kafka primitives.
+
+
 
 

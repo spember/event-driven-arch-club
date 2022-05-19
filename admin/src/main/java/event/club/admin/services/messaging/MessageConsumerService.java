@@ -27,7 +27,7 @@ public class MessageConsumerService {
     private final Map<String, List<InternalNotificationSubscriber<String>>> registeredSubscribers = new HashMap<>();
 
     @KafkaListener(topics = Topics.CHAIRS)
-    public void listenGroupFoo(String message) {
+    public void listenForChairUpdates(String message) {
         registeredSubscribers.getOrDefault(Topics.CHAIRS, Collections.emptyList())
                 .forEach(subscriber -> subscriber.handle(message));
         if (registeredSubscribers.getOrDefault(Topics.CHAIRS, Collections.emptyList()).isEmpty()) {
