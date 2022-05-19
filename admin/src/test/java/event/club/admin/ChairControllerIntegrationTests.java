@@ -4,7 +4,6 @@ import event.club.admin.domain.Chair;
 import event.club.admin.http.UpdateChairCommand;
 import event.club.admin.repositories.JpaChairRepository;
 import event.club.admin.services.ChairManagementService;
-import event.club.admin.services.InternalNotificationSubscriber;
 import event.club.admin.support.BaseSpringIntegrationTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -43,6 +42,7 @@ public class ChairControllerIntegrationTests extends BaseSpringIntegrationTest {
 
         CountDownLatch latch = new CountDownLatch(1); // expecting one notification;
 
+        // Observers / InternalNotificationSubscribers<T> can actually be pretty simple
         chairManagementService.register(value -> latch.countDown());
 
         Chair tested = this.restTemplate.postForObject(localUrl(), new UpdateChairCommand(
@@ -56,6 +56,7 @@ public class ChairControllerIntegrationTests extends BaseSpringIntegrationTest {
         assertEquals(sku, tested.getSku());
         assertNotNull(tested.getId());
 
+        // now wait for the latch to countdown (for our async op to complete)
         latch.await(1500, TimeUnit.MILLISECONDS);
         Chair loaded = this.restTemplate.getForObject(localUrl()+"/"+tested.getId(), Chair.class);
         assertEquals(0, latch.getCount());
