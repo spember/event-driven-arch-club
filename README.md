@@ -102,9 +102,17 @@ The challenge is ramping up. There's several high-level things we want to addres
 * Chairfront's `kubernetes.yaml` will also need to be updated to point at the broker
 * Admin will need to publish messages when it's updated, and then Chairfront and Chairhouse will need to listen.
 
-_Basic Challenge_: Research on how to consume messages from Kafka streams, as well as how to publish them. The Consumers and Publishers are currently set to send and receive Strings. Is this the best way to do this? It might be fine, but you'll need some method for translating the data that is received 'off of the wire' from Kafka into a class your code can understand. We've heard great things about [Jackson's ObjectMapper](https://www.baeldung.com/jackson-object-mapper-tutorial). Update the services to accomplish the high level needs above, and fully sever the HTTP request that Admin makes to Chairfront. In other words, when a Chair is created in Admin it should also be reflected in Chairfront and Chairhouse... all by the magic of Kafka.
+_Basic Challenge_: Using Kafka, ensure that messages are emitted from Admin and picked up by both Chairfront and Chairhouse with no direct HTTP calls. Some additional notes / guidance: 
 
-_Advanced Challenge_: Explore what Tests start to look like when you just publish Messages (i.e. Admin and Chairhouse now have a Kafka TestContainer). Convert the data coming up off the Kafka stream by our Consumer into some internal class before processing. 
+* Research how to consume messages from Kafka streams, as well as how to publish them. 
+* The Consumers and Publishers are currently set to send and receive Strings. Is this the best way to do this? It might be fine, but you'll need some method for translating the data that is received 'off of the wire' from Kafka into a class your code can understand. 
+* We've heard great things about [Jackson's ObjectMapper](https://www.baeldung.com/jackson-object-mapper-tutorial). 
+
+_Advanced Challenge_: Implement additional structure around the messages as they go to / come off the wire. 
+
+* Explore what Tests start to look like when you just publish Messages (i.e. Admin and Chairhouse now have a Kafka TestContainer). 
+* Devise a standard format that the publishers and consumers can understand with respect to the underlying message type. It could be encoded in the message itself (a common 'key' that all consumers & subscribers adhere to), or a custom Kafka Header (you'll need to make use of [Spring's Message object](https://memorynotfound.com/spring-kafka-adding-custom-header-kafka-message-example/) for this route). At the end of this exercise we'll only have one Message 'Type', but soon we'll have more and will need ways to handle them.
+* The Message emitted by Admin will be shared by by the other services (at least at the Consumer class level), perhaps we can package these classes as a 'Contracts' [Java library](https://proandroiddev.com/tip-work-with-third-party-projects-locally-with-gradle-961d6c9efb02) that is imported by everyone?
 
 
 
