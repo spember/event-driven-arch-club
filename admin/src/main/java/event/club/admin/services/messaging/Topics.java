@@ -6,4 +6,6 @@ package event.club.admin.services.messaging;
 public final class Topics {
 
     public static final String CHAIRS = "chair-updates";
+
+    public static final String HEADER = "X-Message-Class";
 }

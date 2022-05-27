@@ -1,9 +1,14 @@
 package event.club.admin.services.messaging;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.KafkaHeaders;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Service;
 
 /**
@@ -14,11 +19,33 @@ public class MessageProducerService {
 
     private static final Logger log = LoggerFactory.getLogger(MessageProducerService.class);
 
+    private final ObjectMapper objectMapper;
+    private final KafkaTemplate<String, String> kafkaTemplate;
+
     @Autowired
-    private KafkaTemplate<String, String> kafkaTemplate;
+    public MessageProducerService(ObjectMapper objectMapper, KafkaTemplate<String, String> kafkaTemplate) {
+        this.objectMapper = objectMapper;
+        this.kafkaTemplate = kafkaTemplate;
+    }
+
+    // this class is probably a good candidate to merge into a library, given that we have a common approach to
+    // communicating (e.g. the X-Message-Type header)
 
     public void emit(String topic, String payload) {
         log.info("Sending payload of '{}' to topic '{}'", payload, topic);
         kafkaTemplate.send(topic, payload);
+    }
+
+
+    public <T> void  emit(String topic, T data)  {
+        try {
+            Message message = MessageBuilder.withPayload(objectMapper.writer().writeValueAsString(data))
+                    .setHeader(KafkaHeaders.TOPIC, topic)
+                    .setHeader(Topics.HEADER, data.getClass().getName())
+                    .build();
+            kafkaTemplate.send(message);
+        } catch(JsonProcessingException e) {
+            log.error("Could not write payload as json", e);
+        }
     }
 }

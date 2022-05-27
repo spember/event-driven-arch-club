@@ -3,9 +3,13 @@ package event.club.admin;
 import event.club.admin.services.messaging.MessageConsumerService;
 import event.club.admin.services.messaging.MessageProducerService;
 import event.club.admin.services.InternalNotificationSubscriber;
+import event.club.admin.services.messaging.Topics;
 import event.club.admin.support.BaseSpringIntegrationTest;
+import event.club.chair.messages.ChairCreated;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -24,14 +28,22 @@ public class MessagingIntegrationTest extends BaseSpringIntegrationTest {
 
         CountDownLatch latch = new CountDownLatch(1);
 
-        consumerService.register("chair-updates", new InternalNotificationSubscriber<String>() {
+        consumerService.register(Topics.CHAIRS, new InternalNotificationSubscriber<String>() {
             @Override
             public void handle(String value) {
                 latch.countDown();
             }
         });
 
-        producerService.emit("chair-updates", "This is a test");
+        ChairCreated created = new ChairCreated(
+                UUID.randomUUID(),
+                1,
+                "MC-0101",
+                "My chair",
+                "This is a great chair"
+        );
+
+        producerService.emit(Topics.CHAIRS, created);
         latch.await(1000, TimeUnit.MILLISECONDS);
         assertEquals(0, latch.getCount());
     }

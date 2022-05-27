@@ -1,12 +1,19 @@
 package event.club.admin.services.messaging;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import event.club.admin.services.InternalNotificationSubscriber;
+import event.club.chair.messages.ChairCreated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.kafka.clients.admin.NewTopic;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.messaging.handler.annotation.Header;
+import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Service;
 
+
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -26,8 +33,20 @@ public class MessageConsumerService {
 
     private final Map<String, List<InternalNotificationSubscriber<String>>> registeredSubscribers = new HashMap<>();
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
     @KafkaListener(topics = Topics.CHAIRS)
-    public void listenForChairUpdates(String message) {
+    public void listenForChairUpdates(@Header(Topics.HEADER) String clazz, @Payload String message) {
+        log.info("Received: {}", message);
+        try {
+            log.info("received {}", objectMapper.reader().readValue(message, this.getClass().getClassLoader().loadClass(clazz)));
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+
         registeredSubscribers.getOrDefault(Topics.CHAIRS, Collections.emptyList())
                 .forEach(subscriber -> subscriber.handle(message));
         if (registeredSubscribers.getOrDefault(Topics.CHAIRS, Collections.emptyList()).isEmpty()) {
