@@ -25,18 +25,20 @@ public class MessagingIntegrationTest extends BaseSpringIntegrationTest {
 
     @Test
     void noMatchingIdShouldReturnNull() throws InterruptedException {
-
+        UUID newChairId = UUID.randomUUID();
         CountDownLatch latch = new CountDownLatch(1);
-
-        consumerService.register(Topics.CHAIRS, new InternalNotificationSubscriber<String>() {
-            @Override
-            public void handle(String value) {
-                latch.countDown();
-            }
+        // normally in an integration test, we'd set up a Consumer within the scope of the test class to assert
+        // receiving of the messages that come out of the service. something like this:
+        // http://cloudurable.com/blog/kafka-tutorial-kafka-consumer/index.html
+        // however, for the sake of time - and that the service always has a no-op consumer for its own topics -
+        // we'll just reuse that
+        consumerService.register(Topics.CHAIRS, ChairCreated.class, value -> {
+            latch.countDown();
+            assertEquals(newChairId, value.getId());
         });
 
         ChairCreated created = new ChairCreated(
-                UUID.randomUUID(),
+                newChairId,
                 1,
                 "MC-0101",
                 "My chair",
