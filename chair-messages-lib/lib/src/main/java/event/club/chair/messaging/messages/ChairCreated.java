@@ -1,4 +1,4 @@
-package event.club.chair.messages;
+package event.club.chair.messaging.messages;
 
 import java.util.UUID;
 

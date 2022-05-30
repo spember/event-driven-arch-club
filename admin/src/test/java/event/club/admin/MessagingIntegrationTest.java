@@ -2,10 +2,9 @@ package event.club.admin;
 
 import event.club.admin.services.messaging.MessageConsumerService;
 import event.club.admin.services.messaging.MessageProducerService;
-import event.club.admin.services.InternalNotificationSubscriber;
-import event.club.admin.services.messaging.Topics;
 import event.club.admin.support.BaseSpringIntegrationTest;
-import event.club.chair.messages.ChairCreated;
+import event.club.chair.messaging.Topics;
+import event.club.chair.messaging.messages.ChairCreated;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -24,7 +23,7 @@ public class MessagingIntegrationTest extends BaseSpringIntegrationTest {
     private MessageProducerService producerService;
 
     @Test
-    void noMatchingIdShouldReturnNull() throws InterruptedException {
+    void basicEventTest() throws InterruptedException {
         UUID newChairId = UUID.randomUUID();
         CountDownLatch latch = new CountDownLatch(1);
         // normally in an integration test, we'd set up a Consumer within the scope of the test class to assert

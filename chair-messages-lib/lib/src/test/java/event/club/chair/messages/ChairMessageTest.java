@@ -1,5 +1,6 @@
 package event.club.chair.messages;
 
+import event.club.chair.messaging.messages.ChairUpdated;
 import org.junit.jupiter.api.Test;
 
 import java.util.UUID;

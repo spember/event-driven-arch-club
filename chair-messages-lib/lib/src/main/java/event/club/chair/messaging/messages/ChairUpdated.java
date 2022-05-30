@@ -1,6 +1,4 @@
-package event.club.chair.messages;
-
-import java.util.UUID;
+package event.club.chair.messaging.messages;
 
 public class ChairUpdated extends ChairManipulationMessage {
 

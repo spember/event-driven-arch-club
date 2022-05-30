@@ -1,4 +1,4 @@
-package event.club.admin.services.messaging;
+package event.club.chair.messaging;
 
 /**
  * Maintains string constants that represent topics that this service calls about
