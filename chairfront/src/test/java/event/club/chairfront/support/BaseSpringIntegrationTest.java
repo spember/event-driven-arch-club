@@ -34,5 +34,13 @@ public abstract class BaseSpringIntegrationTest {
             .withPassword("abc123")
             .waitingFor(Wait.forListeningPort());
 
+    @Container
+    public static SpringKafkaContainer springKafkaContainer = SpringKafkaContainer.getInstance();
 
+    protected String registrationUrl() {
+        return "http://localhost:" + port+"/register";
+    }
+    protected String catalogUrl() {
+        return "http://localhost:" + port+"/catalog";
+    }
 }

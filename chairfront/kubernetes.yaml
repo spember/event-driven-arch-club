@@ -33,6 +33,8 @@ spec:
                   key: password
             - name: SPRING_DATASOURCE_URL
               value: jdbc:postgresql://eventclub-postgres:5432/chairfront
+            - name: KAFKA_BOOTSTRAP
+              value: PLAINTEXT://kafka-service.kafka.svc.cluster.local:9092
 ---
 
 apiVersion: v1

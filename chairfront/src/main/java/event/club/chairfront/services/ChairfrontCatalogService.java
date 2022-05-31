@@ -1,8 +1,12 @@
 package event.club.chairfront.services;
 
+import event.club.chair.messaging.Topics;
+import event.club.chair.messaging.messages.ChairCreated;
+import event.club.chair.messaging.messages.ChairUpdated;
 import event.club.chairfront.domain.Chair;
 import event.club.chairfront.http.UpdateChairFromUpstreamCommand;
 import event.club.chairfront.repositories.JpaChairRepository;
+import event.club.chairfront.services.messaging.MessageConsumerService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,11 +23,17 @@ public class ChairfrontCatalogService {
     private final static Logger log = LoggerFactory.getLogger(ChairfrontCatalogService.class);
 
     private final JpaChairRepository chairRepository;
+    private final MessageConsumerService consumerService;
 
     @Autowired
-    public ChairfrontCatalogService(JpaChairRepository chairRepository) {
+    public ChairfrontCatalogService(JpaChairRepository chairRepository, MessageConsumerService consumerService) {
         this.chairRepository = chairRepository;
+        this.consumerService = consumerService;
         log.info("Initialized the chair service");
+
+        this.consumerService.register(Topics.CHAIRS, ChairCreated.class, this::create);
+        this.consumerService.register(Topics.CHAIRS, ChairUpdated.class, this::update);
+
     }
 
     public Optional<Chair> get(UUID chairId) {
@@ -63,7 +73,28 @@ public class ChairfrontCatalogService {
             log.error("Could not sleep", exception);
         }
         return this.chairRepository.save(target);
+    }
 
+    public Chair create(ChairCreated message) {
+        return this.chairRepository.save(new Chair(
+                message.getId(),
+                message.getVersion(),
+                message.getSku(),
+                message.getName(),
+                message.getDescription(),
+                0
+        ));
+    }
+
+    public Chair update(ChairUpdated message) {
+        return this.chairRepository.save(new Chair(
+                message.getId(),
+                message.getVersion(),
+                message.getSku(),
+                message.getName(),
+                message.getDescription(),
+                0
+        ));
     }
 
 }

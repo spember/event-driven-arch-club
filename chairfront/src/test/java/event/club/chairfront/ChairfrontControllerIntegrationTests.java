@@ -78,11 +78,6 @@ public class ChairfrontControllerIntegrationTests extends BaseSpringIntegrationT
         assertEquals(this.restTemplate.getForObject(catalogUrl()+"?includeAll=true", Chair[].class).length, 1);
     }
 
-    private String registrationUrl() {
-        return "http://localhost:" + port+"/register";
-    }
-    private String catalogUrl() {
-        return "http://localhost:" + port+"/catalog";
-    }
+
 
 }
