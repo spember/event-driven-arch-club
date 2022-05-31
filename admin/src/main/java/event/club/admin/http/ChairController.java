@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -33,7 +34,7 @@ public class ChairController {
     }
 
     @PostMapping("/chairs")
-    public Chair create(@RequestBody UpdateChairCommand command) {
+    public Chair create(@RequestBody CreateChairCommand command) {
         return this.chairManagementService.create(command);
     }
 
@@ -42,5 +43,10 @@ public class ChairController {
         Optional<Chair> maybeChair = chairManagementService.get(chairId);
         log.info("Found chair: " + maybeChair);
         return maybeChair;
+    }
+
+    @PutMapping("/chairs/{chairId}")
+    public Optional<Chair> update(@RequestBody UpdateChairCommand command ) {
+        return chairManagementService.update(command);
     }
 }

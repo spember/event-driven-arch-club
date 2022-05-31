@@ -13,6 +13,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * Intended to be used by other services as Beans in order to ensure that we consume messages in a common manner.
+ */
 public abstract class BaseChairMessageConsumer {
 
     protected final static Logger log = LoggerFactory.getLogger(BaseChairMessageConsumer.class);
@@ -28,8 +31,14 @@ public abstract class BaseChairMessageConsumer {
         this.objectReader = objectReader;
     }
 
-
-
+    /**
+     * Register a Subscriber to be called when a particular Message Type is received on a particular topic.
+     *
+     * @param topic
+     * @param incomingMessageClass
+     * @param subscriber
+     * @param <T>
+     */
     public <T> void register(String topic, Class<T> incomingMessageClass,  InternalNotificationSubscriber<T> subscriber) {
         if (!registeredSubscribers.containsKey(topic)) {
             registeredSubscribers.put(topic, new ArrayList<>());

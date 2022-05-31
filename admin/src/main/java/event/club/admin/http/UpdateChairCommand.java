@@ -1,26 +1,17 @@
 package event.club.admin.http;
 
-public class UpdateChairCommand {
+import java.util.UUID;
 
-    private String requestedSku;
-    private String requestedName;
-    private String requestedDescription;
+public class UpdateChairCommand extends CreateChairCommand {
 
-    public UpdateChairCommand(String requestedSku, String requestedName, String requestedDescription) {
-        this.requestedSku = requestedSku;
-        this.requestedName = requestedName;
-        this.requestedDescription = requestedDescription;
+    private UUID id;
+
+    public UpdateChairCommand(UUID id, String requestedSku, String requestedName, String requestedDescription) {
+        super(requestedSku, requestedName, requestedDescription);
+        this.id = id;
     }
 
-    public String getRequestedSku() {
-        return requestedSku;
-    }
-
-    public String getRequestedDescription() {
-        return requestedDescription;
-    }
-
-    public String getRequestedName() {
-        return requestedName;
+    public UUID getId() {
+        return id;
     }
 }
