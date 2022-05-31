@@ -1,5 +1,8 @@
 package event.club.warehouse.services;
 
+import event.club.chair.messaging.Topics;
+import event.club.chair.messaging.messages.ChairCreated;
+import event.club.chair.messaging.messages.ChairUpdated;
 import event.club.warehouse.domain.Chair;
 import event.club.warehouse.repositories.JpaChairRepository;
 import event.club.warehouse.services.messaging.MessageConsumerService;
@@ -22,20 +25,20 @@ public class ChairManagementService {
     private final JpaChairRepository chairRepository;
 
     private final MessageConsumerService consumerService;
-    private final ExecutorService threadPool;
 
 
 
     @Autowired
     public ChairManagementService(
             JpaChairRepository chairRepository,
-            MessageConsumerService consumerService, ExecutorService executorService
+            MessageConsumerService consumerService
     ) {
         this.chairRepository = chairRepository;
         this.consumerService = consumerService;
-        this.threadPool = executorService;
         // register Observers, subscribe to incoming messages
 
+        this.consumerService.register(Topics.CHAIRS, ChairCreated.class, this::handleCreate);
+        this.consumerService.register(Topics.CHAIRS, ChairUpdated.class, this::handleUpdate);
         log.info("Initialized the chair service");
     }
 
@@ -48,5 +51,21 @@ public class ChairManagementService {
         List<Chair> chairs = new ArrayList<>();
         this.chairRepository.findAll().forEach(chairs::add);
         return chairs;
+    }
+
+    private void handleCreate(ChairCreated message) {
+        // we need to create a new chair type. No inventory yet to speak of.
+        // note that ChairHouse's concept of chair doesn't need all the details.
+        chairRepository.save(new Chair(message.getId(), message.getVersion(), message.getSku(), message.getName()));
+    }
+
+    private void handleUpdate(ChairUpdated message) {
+        if (chairRepository.existsById(message.getId())) {
+            chairRepository.save(new Chair(message.getId(), message.getVersion(), message.getSku(), message.getName()));
+        } else {
+            // this method will be called async and as such direct feedback (i.e. from a user call) may not be obvious
+            // this is a perfect place for reporting errors to metrics.
+            log.error("Received an update for an unknown chair {}", message.getId());
+        }
     }
 }

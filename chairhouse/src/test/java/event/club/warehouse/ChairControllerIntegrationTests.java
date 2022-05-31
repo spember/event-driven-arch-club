@@ -29,9 +29,7 @@ public class ChairControllerIntegrationTests extends BaseSpringIntegrationTest {
         assertEquals(this.restTemplate.getForObject(localUrl(), Chair[].class).length, 0);
     }
 
-    private String localUrl() {
-        return "http://localhost:" + port+"/chairs";
-    }
+
 
 
 }

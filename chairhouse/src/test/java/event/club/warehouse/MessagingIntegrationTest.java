@@ -1,15 +1,23 @@
 package event.club.warehouse;
 
+import event.club.chair.messaging.InternalNotificationSubscriber;
+import event.club.chair.messaging.Topics;
+import event.club.chair.messaging.messages.ChairCreated;
+import event.club.chair.messaging.messages.ChairUpdated;
+import event.club.warehouse.domain.Chair;
 import event.club.warehouse.services.messaging.MessageConsumerService;
 import event.club.warehouse.services.messaging.MessageProducerService;
-import event.club.warehouse.services.InternalNotificationSubscriber;
+
 import event.club.warehouse.support.BaseSpringIntegrationTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertTrue;
 
 public class MessagingIntegrationTest extends BaseSpringIntegrationTest {
 
@@ -20,19 +28,64 @@ public class MessagingIntegrationTest extends BaseSpringIntegrationTest {
     private MessageProducerService producerService;
 
     @Test
-    void noMatchingIdShouldReturnNull() throws InterruptedException {
+    void handleSimpleCreate() throws InterruptedException {
 
         CountDownLatch latch = new CountDownLatch(1);
 
-        consumerService.register("chair-updates", new InternalNotificationSubscriber<String>() {
-            @Override
-            public void handle(String value) {
-                latch.countDown();
-            }
-        });
-
-        producerService.emit("chair-updates", "This is a test");
+        consumerService.register(Topics.CHAIRS, ChairCreated.class, value -> latch.countDown());
+        UUID chairId = UUID.randomUUID();
+        producerService.emit(Topics.CHAIRS, new ChairCreated(
+                chairId,
+                1,
+                "CH-0123",
+                "My first Chair",
+                "Chairs are life"
+        ));
         latch.await(1000, TimeUnit.MILLISECONDS);
         assertEquals(0, latch.getCount());
+
+        Chair newChair = this.restTemplate.getForObject(localUrl() +"/" + chairId, Chair.class);
+        assertEquals(chairId, newChair.getId());
+        assertEquals(1, newChair.getVersion());
+        assertEquals("My first Chair", newChair.getName());
+    }
+
+    @Test
+    void updatingShouldBeGreat() throws InterruptedException {
+        CountDownLatch latch = new CountDownLatch(3);
+        consumerService.register(Topics.CHAIRS, ChairCreated.class, value -> latch.countDown());
+        consumerService.register(Topics.CHAIRS, ChairUpdated.class, value -> latch.countDown());
+
+        UUID chairId = UUID.randomUUID();
+        producerService.emit(Topics.CHAIRS, new ChairCreated(
+                chairId,
+                1,
+                "CH-9999",
+                "My first Chair",
+                "Chairs are life"
+        ));
+
+        producerService.emit(Topics.CHAIRS, new ChairUpdated(
+                chairId,
+                2,
+                "CH-9999",
+                "My First Chair",
+                "Chairs are life"
+        ));
+
+        producerService.emit(Topics.CHAIRS, new ChairCreated(
+                chairId,
+                3,
+                "CH-9999",
+                "My First Chair",
+                "It is a very excellent chair" // this one would be .. ignored
+        ));
+
+        latch.await(1000, TimeUnit.MILLISECONDS);
+        assertEquals(0, latch.getCount());
+
+        Chair newChair = this.restTemplate.getForObject(localUrl() +"/" + chairId, Chair.class);
+        assertEquals(chairId, newChair.getId());
+        assertEquals(3, newChair.getVersion());
     }
 }

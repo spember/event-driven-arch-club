@@ -32,12 +32,6 @@ public class MessageProducerService {
     // this class is probably a good candidate to merge into a library, given that we have a common approach to
     // communicating (e.g. the X-Message-Type header)
 
-    public void emit(String topic, String payload) {
-        log.info("Sending payload of '{}' to topic '{}'", payload, topic);
-        kafkaTemplate.send(topic, payload);
-    }
-
-
     public <T> void  emit(String topic, T data)  {
         try {
             Message message = MessageBuilder.withPayload(objectMapper.writer().writeValueAsString(data))
