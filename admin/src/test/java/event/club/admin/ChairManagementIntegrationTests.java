@@ -22,5 +22,4 @@ public class ChairManagementIntegrationTests extends BaseSpringIntegrationTest {
         Optional<Chair> maybeChair = service.get(UUID.randomUUID());
         assertTrue(maybeChair.isEmpty());
     }
-
 }
