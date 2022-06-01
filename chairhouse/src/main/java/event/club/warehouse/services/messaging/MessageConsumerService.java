@@ -35,7 +35,6 @@ public class MessageConsumerService extends BaseChairMessageConsumer {
             log.error("Received a message with no Message class in Header");
             return;
         }
-        log.info("Received: {}", message);
         this.handleDelivery(clazz, message);
     }
 }

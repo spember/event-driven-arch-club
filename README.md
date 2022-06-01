@@ -27,9 +27,10 @@ Note: most of these steps should be done in `terminal window 1`, with the except
 1. `kubectl apply -f 01-zookeeper.yaml`. Wait until it's up and running by checking `kubectl --namespace=kafka get pods`
 1. `kubectl apply -f 02-kafka.yaml`
 1. `kubectl apply -f 03-jobs.yaml`
-1. build the repos (in `terminal window 2`: cd into the sub folders and `./gradlew build`)
+1. build the library and service repos (in `terminal window 2`: cd into the sub folders and `./gradlew build`, start with `chair-messages-lib`). Alternatively, a bash script will do this for you: in the same location as this file, run `./build-repos.sh` -> you may need to `chmod +x` it first.
 1. build the docker images: `docker build -t eventclub/chair-admin admin/.` and `docker build -t eventclub/chairfront chairfront/.` _Note_: ensure you've run the eval command above, first. This scopes your terminal window to use Minikube's docker environment and not your laptop's. This also means that builds of the apps should be done in another terminal (`terminal window 2`).
 1. `kubectl apply -f chairfront/kubernetes.yaml`
+1. `kubectl apply -f chairhouse/kubernetes.yaml`
 1. `kubectl apply -f admin/kubernetes.yaml`
 1. `minikube tunnel` (in `terminal window 3`)
 
@@ -65,54 +66,32 @@ $ minikube config set cpus < maybe more than 1?>
 $ minikube start
 ```
 
-
 ---
 
 
-## Current Situation: 01 - Kafka Time
+## Current Situation: 02 - Making More Robust Consumers And Scaling Workloads
 
-We here at the Chair Company are trying to expand our service-to-service communication. Recently we made an initiative to push how our Admin app communicates to our Chairfront service, moving it from Synchronous HTTP request to an async http request. Take a look at Admin's `ChairManagementService`; we created a `ChairPersistTask` (which implements `Runnable`), and submit it a ThreadPool for asynchronous processing. Our also started experimenting with the Observer Pattern, which we've heard may be useful in the future. We also added a test which proves our async behavior via a registered `InternalNotificationSubscriber<T>` (look at `event.club.admin.ChairControllerIntegrationTests` to see it in action).
+Great news! Work is coming along in our Decoupling Journey. We know have both Chairfront and Chairhouse listening for Create and Update messages regarding Chair types which are asynchronously being written to Kafka topics by the Admin service. Yes, that means there is now an 'update' controller endpoint in Admin that one can use to manipulate an existing Chair.
 
-
-That's not all! Our engineers have been busy! They've launched a skeleton of a new service we'll need in the future; a warehouse management service we've been sitting on creating that we're calling 'ChairHouse'. 
-
-Therefore, we now have _three_ services: 
-
-* `admin` or `chairs-admin`: The main API for administration of our platform. Intended to be used by administrators to create and report on our 'Chair' domain objects. It's main endpoint is `/chairs`, refer to the `event.club.admin.http.ChairController` for more info.
-* `chairfront`: the Customer - oriented api. Will show which types of 'Chairs' we have, if any. It's main endpoint is `/catalog`, refer to `event.club.chairfront.http.CatalogController` for more info.
-* `chairhouse`: The Warehouse tracking app. It's extremely bare bones as of now, but the plan is to track the Chair domain in order to know what types of Chairs our warehouse will stock... along with the Inventory, which represents _actual, specific_ chairs in our warehouse (or, instances of chairs). It doesn't do much yet, but we hope to build it out soon!
+Additionally, our engineers have noticed that they created a good deal of repeatable code. They've extracted some of this into a new, shared library called `chair-messages-lib`. _Note_: new users will need to get in the habit of "publishing to maven local" (`./gradlew pTML`) to make use of it. This library is meant to force a common approach to communication (e.g. set headers in Kafka messages) AND contain common message classes. We're excited to see where this goes!
 
 
 ### Scenario:
 
-Of course, things are getting more complicated. Our enigmatic engineers are getting worried about having to update not 1 but _2_ services when a Chair is created in the Admin app. Their concern is well grounded... having to keep track on which servers need to get notified about which changes is hard.
+Even though we've just entered into the world of Kafka Messages, Publishers, and Consumers... our team is getting nervous. Things seem fine for now with our two messages, but concerns are being raised. Is it true that Messages can be re-delivered? What is this 'Idempotent' word we've heard about? An engineer just asked me if they could change the name of a Message; is that a good idea?
 
-During a recent daily sit-down meeting (stand-ups are frowned upon here at CC) one of our enterprising engineers proposed using a message broker  - specifically [Apache Kafka](https://kafka.apache.org/) - as a means of "decoupling" (?) our applications. Excitingly, they've already created something called a 'Publisher' and a 'Consumer'  within our Admin and ChairHouse applications, a YAML to run it in our Kubernetes cluster, and a Test to prove we can interact with the Broker.
-
-
-The problem here is that we want to increase our Kafka presence, eliminate the cross-service HTTP calls, and ensure that our "downstream" services (ChairHouse and don't forget Chairfront) are consuming data published by the Admin application. But how?
-
-> Note: the Kafka related operations are making use of quite a lot of Spring Reactor specific code, which should make things a bit friendlier, but also hides some of the underlying Kafka primitives.
+As an added concern, our warehouse just received a large shipment of instances of Chairs. This would normally be good news but 1) we forgot to add pricing details on each record and 2) our Chairfront app doesn't know about this inventory! This process would take a while if we did it in one big push, can we somehow make use of Messages here?
 
 ### Task at hand:
 
-The challenge is ramping up. There's several high-level things we want to address:
 
-* Someone thoughtfully added Kafka-related code to Admin and ChairHouse (Take a look at `MessageConsumerService` and `MessageProducerService` in both). However, this has not been integrated into Chairfront. 
-* Chairfront's `kubernetes.yaml` will also need to be updated to point at the broker
-* Admin will need to publish messages when it's updated, and then Chairfront and Chairhouse will need to listen.
+_Basic Challenge_: Let's make our Message Consumption more robust. We're very worried about processing messages more than once, and are concerned about potential Message versioning.
 
-_Basic Challenge_: Using Kafka, ensure that messages are emitted from Admin and picked up by both Chairfront and Chairhouse with no direct HTTP calls. Some additional notes / guidance: 
+1. Devise an approach for Chairhouse and Chairfront such that they would ignore / skip Messages for Chair types that they've already seen before. There exists base code to start down the path of using `version`, but other approaches are valid. 
+1. Create a design for 'aliasing' Messages. Currently, the shared library is relying on the `className`  of the Message. This is straightforward, but also very brittle. What happens if someone renames a Message or moves it within packages? A better solution is to create one or more aliases for individual shared Message classes. There are multiple ways to accomplish this, including a hard-coded lookup table or declarative discovery on startup (java annotations are good for this, can be discovered during a classpath scan).
+1. Bonus Points: explore expanding your Message Consumer classes such that they map the shared Message class into some internally understand class unique to the Service.
 
-* Research how to consume messages from Kafka streams, as well as how to publish them. 
-* The Consumers and Publishers are currently set to send and receive Strings. Is this the best way to do this? It might be fine, but you'll need some method for translating the data that is received 'off of the wire' from Kafka into a class your code can understand. 
-* We've heard great things about [Jackson's ObjectMapper](https://www.baeldung.com/jackson-object-mapper-tutorial). 
-
-_Advanced Challenge_: Implement additional structure around the messages as they go to / come off the wire. 
-
-* Explore what Tests start to look like when you just publish Messages (i.e. Admin and Chairhouse now have a Kafka TestContainer). 
-* Devise a standard format that the publishers and consumers can understand with respect to the underlying message type. It could be encoded in the message itself (a common 'key' that all consumers & subscribers adhere to), or a custom Kafka Header (you'll need to make use of [Spring's Message object](https://memorynotfound.com/spring-kafka-adding-custom-header-kafka-message-example/) for this route). At the end of this exercise we'll only have one Message 'Type', but soon we'll have more and will need ways to handle them.
-* The Message emitted by Admin will be shared by by the other services (at least at the Consumer class level), perhaps we can package these classes as a 'Contracts' [Java library](https://proandroiddev.com/tip-work-with-third-party-projects-locally-with-gradle-961d6c9efb02) that is imported by everyone?
+_Advanced Challenge_: TBD, but will involve loading and batching messages from Chairhouse.
 
 
 
