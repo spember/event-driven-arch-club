@@ -15,6 +15,7 @@ public class Inventory {
     private String serial;
     private UUID chairId;
     private int version = 0;
+    private int currentPrice = 0;
     private Instant arrived;
     private Instant purchased;
     private Instant shipped;
@@ -69,5 +70,13 @@ public class Inventory {
 
     public void setShipped(Instant shipped) {
         this.shipped = shipped;
+    }
+
+    public int getCurrentPrice() {
+        return currentPrice;
+    }
+
+    public void setCurrentPrice(int currentPrice) {
+        this.currentPrice = currentPrice;
     }
 }

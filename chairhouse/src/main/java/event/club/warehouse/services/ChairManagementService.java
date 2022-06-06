@@ -15,7 +15,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.ExecutorService;
 
 @Service
 public class ChairManagementService {
@@ -53,13 +52,13 @@ public class ChairManagementService {
         return chairs;
     }
 
-    private void handleCreate(ChairCreated message) {
+    public void handleCreate(ChairCreated message) {
         // we need to create a new chair type. No inventory yet to speak of.
         // note that ChairHouse's concept of chair doesn't need all the details.
         chairRepository.save(new Chair(message.getId(), message.getVersion(), message.getSku(), message.getName()));
     }
 
-    private void handleUpdate(ChairUpdated message) {
+    public void handleUpdate(ChairUpdated message) {
         if (chairRepository.existsById(message.getId())) {
             chairRepository.save(new Chair(message.getId(), message.getVersion(), message.getSku(), message.getName()));
         } else {
