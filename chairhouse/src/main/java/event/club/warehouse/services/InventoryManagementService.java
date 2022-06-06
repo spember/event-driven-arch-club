@@ -2,6 +2,7 @@ package event.club.warehouse.services;
 
 import event.club.warehouse.domain.Inventory;
 import event.club.warehouse.repositories.ExternalPricingRepository;
+import event.club.warehouse.repositories.InventorySerialsOnly;
 import event.club.warehouse.repositories.JpaInventoryRepository;
 import event.club.warehouse.services.messaging.MessageProducerService;
 import org.slf4j.Logger;
@@ -26,6 +27,8 @@ public class InventoryManagementService {
 
     private final static Logger log = LoggerFactory.getLogger(InventoryManagementService.class);
 
+    private final static int DEFAULT_PAGE_SIZE = 0;
+
     private final MessageProducerService producerService;
     private final JpaInventoryRepository jpaInventoryRepository;
     private final ExternalPricingRepository externalPricingRepository;
@@ -43,14 +46,13 @@ public class InventoryManagementService {
         this.externalPricingRepository = externalPricingRepository;
     }
 
-    public Stream<Inventory> loadAllForChair(UUID chairId) {
+    public Stream<Inventory> loadAllForChair(UUID chairId, int pageSize) {
 
         Query query = entityManagerFactory.createEntityManager()
                 .createQuery("From Inventory where chairId = :chairId");
         query.setParameter("chairId", chairId);
         List<Inventory> totalItems = new ArrayList<>();
         int currentPage = -1;
-        int pageSize = 25;
         // page through the results. It's a bad idea generally to query for an unbounded set of records; although 25
         // is too small of a size wrt to balancing for number of requests, I do it here for illustration.
         // also, I miss jooq. If I had more time I'd set it up.
@@ -67,16 +69,24 @@ public class InventoryManagementService {
         return totalItems.stream();
     }
 
-    /**
-     * Whoops! We forgot to set the price on our inventory. For some reason we decided to price our chairs individually
-     * within some range. A side effect of all this is now we need to go and update each individual chair one by one.
-     *
-     *
-     * This method will calculate the price for a given Inventory item and update it in the database. If it already has
-     * a price (e.g. you ran this again, because a message was read twice) it will be skipped.
-     *
-     * @param item
-     */
+    public Stream<Inventory> loadAllForChair(UUID chairId) {
+        return loadAllForChair(chairId, DEFAULT_PAGE_SIZE);
+    }
+
+    public Stream<String> loadAllSerialsForChair(UUID chairId) {
+        return jpaInventoryRepository.findByChairId(chairId).stream().map(InventorySerialsOnly::getSerial);
+    }
+
+ /**
+  * Whoops! We forgot to set the price on our inventory. For some reason we decided to price our chairs individually
+  * within some range. A side effect of all this is now we need to go and update each individual chair one by one.
+  *
+  *
+  * This method will calculate the price for a given Inventory item and update it in the database. If it already has
+  * a price (e.g. you ran this again, because a message was read twice) it will be skipped.
+  *
+  * @param item
+  */
     public void recalculatePrice(Inventory item) {
         Optional<Integer> updatedPrice = externalPricingRepository.calculatePriceInCents(item);
         if (updatedPrice.isEmpty()) {

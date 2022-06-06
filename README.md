@@ -88,10 +88,18 @@ As an added concern, our warehouse just received a large shipment of instances o
 _Basic Challenge_: Let's make our Message Consumption more robust. We're very worried about processing messages more than once, and are concerned about potential Message versioning.
 
 1. Devise an approach for Chairhouse and Chairfront such that they would ignore / skip Messages for Chair types that they've already seen before. There exists base code to start down the path of using `version`, but other approaches are valid. 
-1. Create a design for 'aliasing' Messages. Currently, the shared library is relying on the `className`  of the Message. This is straightforward, but also very brittle. What happens if someone renames a Message or moves it within packages? A better solution is to create one or more aliases for individual shared Message classes. There are multiple ways to accomplish this, including a hard-coded lookup table or declarative discovery on startup (java annotations are good for this, can be discovered during a classpath scan).
+1. Create a design for 'aliasing' Messages. Currently, the shared library is relying on the `className`  of the Message. This is straightforward, but also very brittle. What happens if someone renames a Message or moves it within packages? A better solution is to create one or more aliases for individual shared Message classes. There are multiple ways to accomplish this, including a hard-coded lookup table or declarative discovery on application startup (java annotations are good for this, can be discovered during a classpath scan). Note: this will almost certainly involve updating the shared library such that the other apps can make use of your aliasing.
 1. Bonus Points: explore expanding your Message Consumer classes such that they map the shared Message class into some internally understand class unique to the Service.
 
-_Advanced Challenge_: TBD, but will involve loading and batching messages from Chairhouse.
+_Advanced Challenge_: Uh Oh! We've discovered that we have over a hundred chairs in our inventory currently and they're all priced at $0. Why do we have individual prices set for each inventory item? Shhhhh just ignore that for now. Anyway, we'll need to go through the process of updating all of the prices for the Inventory items for a given Chair. We unfortunately cannot just use a single SQL update right now, we're forced to call into our (simulated) Pricing Service by utilizing the `event.club.warehouse.repositories.ExternalPricingRepository`, which will take a second or two to function. It also doesn't support batch so we have to go one at a time. 
+
+While we work with that team to fix how pricing works, we unfortunately need to do the following: 
+
+1. Create an entry point into ChairHouse which will 'kick off' the work. We need to discover all of the Inventory `Serials` for a given chair type (we can use `event.club.warehouse.services.InventoryManagementService#loadAllSerialsForChair`).
+1. Using these serials, publish messages - either singularly or in batches - to a Topic consumed just by ChairHouse. In effect, chairhouse is publishing to itself.
+1. Update the Consumer to read these Messages, load the Inventory items by their `serial` value, and update the price using the `event.club.warehouse.services.InventoryManagementService#recalculatePrice` method. This will persist the inventory as well.
+
+This effectively breaks up a long-running task (recalculating pricing) into small, stateless chunks which can picked up and worked on by any instance of ChairHouse. _Bonus Points_: scale up ChairHouse before running.
 
 
 

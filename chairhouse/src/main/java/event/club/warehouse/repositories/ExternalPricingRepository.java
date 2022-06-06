@@ -5,7 +5,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 import java.util.Random;
-import java.util.UUID;
 
 /**
  * Simulates some third-party or additional service that is used to generate a price based on chair type.
