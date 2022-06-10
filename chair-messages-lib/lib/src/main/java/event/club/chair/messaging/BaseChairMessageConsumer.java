@@ -2,6 +2,7 @@ package event.club.chair.messaging;
 
 
 import com.fasterxml.jackson.databind.ObjectReader;
+import event.club.chair.messaging.messages.DomainMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,7 +40,7 @@ public abstract class BaseChairMessageConsumer {
      * @param subscriber
      * @param <T>
      */
-    public <T> void register(String topic, Class<T> incomingMessageClass,  InternalNotificationSubscriber<T> subscriber) {
+    public <T extends DomainMessage> void register(String topic, Class<T> incomingMessageClass,  InternalNotificationSubscriber<T> subscriber) {
         if (!registeredSubscribers.containsKey(topic)) {
             registeredSubscribers.put(topic, new ArrayList<>());
         }
@@ -47,16 +48,16 @@ public abstract class BaseChairMessageConsumer {
         log.info("Registered subscriber for topic {} and message class {}", topic, incomingMessageClass);
     }
 
-    protected void handleDelivery(String messageClassToLoad, String message) {
-        Optional<Object> hydratedMessage = parse(messageClassToLoad, message);
+    protected <T extends DomainMessage> void handleDelivery(String messageClassToLoad, String message) {
+        Optional<T> hydratedMessage = parse(messageClassToLoad, message);
         if (hydratedMessage.isEmpty()) {
             log.warn("No message was parsed for {}", messageClassToLoad);
             return;
         }
-        registeredSubscribers.getOrDefault(Topics.CHAIRS, Collections.emptyList())
+        registeredSubscribers.getOrDefault(DomainTopics.CHAIRS, Collections.emptyList())
                 .forEach(handlerPair -> handlerPair.handleIfMatch(hydratedMessage.get()));
-        if (registeredSubscribers.getOrDefault(Topics.CHAIRS, Collections.emptyList()).isEmpty()) {
-            log.warn("Message received on topic {}, but there were no listeners", Topics.CHAIRS);
+        if (registeredSubscribers.getOrDefault(DomainTopics.CHAIRS, Collections.emptyList()).isEmpty()) {
+            log.warn("Message received on topic {}, but there were no listeners", DomainTopics.CHAIRS);
         }
     }
 
@@ -67,11 +68,11 @@ public abstract class BaseChairMessageConsumer {
      * @param messageClassToLoad
      * @param message
      */
-    protected Optional<Object> parse(String messageClassToLoad, String message) {
+    protected <T extends DomainMessage> Optional<T> parse(String messageClassToLoad, String message) {
         // we use Optional to signal the fact that this thing may fail
         log.info("Received: {}", message);
         try {
-            Object hydratedMessage = objectReader.readValue(
+            T hydratedMessage = (T) objectReader.readValue(
                     message,
                     this.getClass().getClassLoader().loadClass(messageClassToLoad));
             log.info("Received message {}", hydratedMessage);
@@ -92,7 +93,7 @@ public abstract class BaseChairMessageConsumer {
      *
      * @param <T> The Class of the incoming Message
      */
-    protected class ClassSubscriberPair<T> {
+    protected class ClassSubscriberPair<T extends DomainMessage> {
         private final Class<T> clazz;
 
         private final InternalNotificationSubscriber<T> subscriber;

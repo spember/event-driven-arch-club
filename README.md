@@ -102,6 +102,22 @@ While we work with that team to fix how pricing works, we unfortunately need to 
 This effectively breaks up a long-running task (recalculating pricing) into small, stateless chunks which can picked up and worked on by any instance of ChairHouse. _Bonus Points_: scale up ChairHouse before running.
 
 
+---
+
+## Current Situation 03 - Query Models & CQRS
+
+_Basic Challenge_: 
+
+* Commands go to 'ship' chairs, query Chairfront to see the current inventory state.
+
+* Query Model in Chairfront that listens for updates and 
+* Chairfront, at this point, is just a big Query Model for data coming from Admin and Chairhouse. This will change next time!
+
+
+_Advanced Challenge_
+
+* Chairfront is listening for messages from Chairfront, but due to the nature of the Kafka journal, it may be that we re-read the journal and end up with messages more than once. There are few techinques to alleviate this; for example: Chairfront could track updates by inventory item for a short while, or it could routinely (say, every hour) check the current inventory state with Chairhouse.
+
 
 
 

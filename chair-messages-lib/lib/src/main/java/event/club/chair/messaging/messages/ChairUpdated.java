@@ -2,6 +2,7 @@ package event.club.chair.messaging.messages;
 
 import java.util.UUID;
 
+@HeaderInfo(aliases = "chair-updated")
 public class ChairUpdated extends ChairManipulationMessage {
 
     public ChairUpdated() {

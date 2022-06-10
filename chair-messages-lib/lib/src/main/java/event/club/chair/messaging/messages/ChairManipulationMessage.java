@@ -5,7 +5,7 @@ import java.util.UUID;
 /**
  * Contains the common fields and methods used by the various Chair entity messages
  */
-class ChairManipulationMessage {
+class ChairManipulationMessage implements DomainMessage {
 
     protected UUID id;
     protected int version;
