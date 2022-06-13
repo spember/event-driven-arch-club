@@ -6,6 +6,7 @@ import event.club.chair.messaging.DomainTopics;
 import event.club.chair.messaging.MessageHeaders;
 import event.club.chair.messaging.MessageTypeRegistry;
 import org.apache.kafka.clients.admin.NewTopic;
+import org.jooq.Domain;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,11 +32,13 @@ public class MessageConsumerService extends BaseChairMessageConsumer {
     }
 
     @KafkaListener(topics = DomainTopics.CHAIRS)
-    public void listenForChairUpdates(@Header(MessageHeaders.CLASS) String clazz, @Payload String message) {
-        if (clazz == null || clazz.isEmpty()) {
-            log.error("Received a message with no Message class in Header");
-            return;
-        }
-        this.handleDelivery(clazz, message);
+    public void listenForChairUpdates(@Header(MessageHeaders.CLASS) String alias, @Payload String message) {
+        // the handle function now checks for empty alias strings
+        this.handleDelivery(DomainTopics.CHAIRS, alias, message);
+    }
+
+    @KafkaListener(topics = InternalTopics.WAREHOUSE_WORK)
+    public void listenForWorkUpdates(@Header(MessageHeaders.CLASS) String alias, @Payload String message) {
+        this.handleDelivery(InternalTopics.WAREHOUSE_WORK, alias, message);
     }
 }

@@ -1,6 +1,7 @@
 package event.club.warehouse.config;
 
 import event.club.chair.messaging.DomainTopics;
+import event.club.warehouse.services.messaging.InternalTopics;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -87,6 +88,14 @@ public class KafkaConfiguration {
     public NewTopic chairUpdatesTopic() {
         return TopicBuilder.name(DomainTopics.CHAIRS)
                 .partitions(3)
+                .replicas(1)
+                .build();
+    }
+
+    @Bean
+    public NewTopic internalWorkTopic() {
+        return TopicBuilder.name(InternalTopics.WAREHOUSE_WORK)
+                .partitions(5)
                 .replicas(1)
                 .build();
     }
