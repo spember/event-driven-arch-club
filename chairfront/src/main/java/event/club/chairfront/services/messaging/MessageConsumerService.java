@@ -32,10 +32,6 @@ public class MessageConsumerService extends BaseChairMessageConsumer {
 
     @KafkaListener(topics = DomainTopics.CHAIRS)
     public void listenForChairUpdates(@Header(MessageHeaders.CLASS) String clazz, @Payload String message) {
-        if (clazz == null || clazz.isEmpty()) {
-            log.error("Received a message with no Message class in Header");
-            return;
-        }
-        this.handleDelivery(clazz, message);
+        this.handleDelivery(DomainTopics.CHAIRS, clazz, message);
     }
 }

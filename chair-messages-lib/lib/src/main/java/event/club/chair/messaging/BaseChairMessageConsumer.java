@@ -51,7 +51,11 @@ public abstract class BaseChairMessageConsumer {
         log.info("Registered subscriber for topic {} and message class {}", topic, incomingMessageClass);
     }
 
-    protected <T extends DomainMessage> void handleDelivery(String messageKey, String message) {
+    protected <T extends DomainMessage> void handleDelivery(String topic, String messageKey, String message) {
+        if (messageKey == null || messageKey.isEmpty()) {
+            log.error("No messageKey provided. There likely was not one in the Header of the Message");
+            return;
+        }
         Optional<Class<? extends DomainMessage>> maybeMessageClass = registry.getMessageForAlias(messageKey);
         if (maybeMessageClass.isEmpty()) {
             log.error("Received message with unknown key of {}", messageKey);
@@ -62,10 +66,10 @@ public abstract class BaseChairMessageConsumer {
             log.warn("No message was parsed for {}", messageKey);
             return;
         }
-        registeredSubscribers.getOrDefault(DomainTopics.CHAIRS, Collections.emptyList())
+        registeredSubscribers.getOrDefault(topic, Collections.emptyList())
                 .forEach(handlerPair -> handlerPair.handleIfMatch(hydratedMessage.get()));
-        if (registeredSubscribers.getOrDefault(DomainTopics.CHAIRS, Collections.emptyList()).isEmpty()) {
-            log.warn("Message received on topic {}, but there were no listeners", DomainTopics.CHAIRS);
+        if (registeredSubscribers.getOrDefault(topic, Collections.emptyList()).isEmpty()) {
+            log.warn("Message received on topic {}, but there were no listeners", topic);
         }
     }
 
