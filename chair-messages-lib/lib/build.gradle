@@ -24,6 +24,9 @@ dependencies {
     implementation 'org.reflections:reflections:0.10.2'
     implementation "com.fasterxml.jackson.core:jackson-core:2.13.2"
     implementation "com.fasterxml.jackson.core:jackson-databind:2.13.2"
+    // feels a little gross to pull in spring libraries, but if we as an org are using spring it should be fine
+    implementation 'org.springframework.kafka:spring-kafka:2.8.6'
+
     // Use JUnit Jupiter for testing.
     testImplementation 'org.junit.jupiter:junit-jupiter:5.7.2'
 

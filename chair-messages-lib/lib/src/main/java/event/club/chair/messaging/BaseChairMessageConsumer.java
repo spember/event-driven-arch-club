@@ -28,8 +28,11 @@ public abstract class BaseChairMessageConsumer {
 
     protected final ObjectReader objectReader;
 
-    public BaseChairMessageConsumer(ObjectReader objectReader) {
+    protected final MessageTypeRegistry registry;
+
+    public BaseChairMessageConsumer(ObjectReader objectReader, MessageTypeRegistry registry) {
         this.objectReader = objectReader;
+        this.registry = registry;
     }
 
     /**
@@ -48,10 +51,15 @@ public abstract class BaseChairMessageConsumer {
         log.info("Registered subscriber for topic {} and message class {}", topic, incomingMessageClass);
     }
 
-    protected <T extends DomainMessage> void handleDelivery(String messageClassToLoad, String message) {
-        Optional<T> hydratedMessage = parse(messageClassToLoad, message);
+    protected <T extends DomainMessage> void handleDelivery(String messageKey, String message) {
+        Optional<Class<? extends DomainMessage>> maybeMessageClass = registry.getMessageForAlias(messageKey);
+        if (maybeMessageClass.isEmpty()) {
+            log.error("Received message with unknown key of {}", messageKey);
+            return;
+        }
+        Optional<T> hydratedMessage = parse(maybeMessageClass.get().getName(), message);
         if (hydratedMessage.isEmpty()) {
-            log.warn("No message was parsed for {}", messageClassToLoad);
+            log.warn("No message was parsed for {}", messageKey);
             return;
         }
         registeredSubscribers.getOrDefault(DomainTopics.CHAIRS, Collections.emptyList())

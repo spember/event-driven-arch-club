@@ -5,7 +5,7 @@ import event.club.admin.http.CreateChairCommand;
 import event.club.admin.http.UpdateChairCommand;
 import event.club.admin.repositories.JpaChairRepository;
 import event.club.admin.services.messaging.MessageProducerService;
-import event.club.chair.messaging.Topics;
+import event.club.chair.messaging.DomainTopics;
 import event.club.chair.messaging.messages.ChairCreated;
 import event.club.chair.messaging.messages.ChairUpdated;
 import org.slf4j.Logger;
@@ -16,7 +16,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
-import javax.swing.text.html.Option;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -32,10 +31,6 @@ public class ChairManagementService {
 
     private final RestTemplate client = new RestTemplate();
 
-    private final String chairfrontLocation;
-
-    private final ExecutorService threadPool;
-
     private final MessageProducerService producerService;
 
     private List<InternalNotificationSubscriber<Chair>> chairNotificationSubscribers = new ArrayList<>();
@@ -43,15 +38,10 @@ public class ChairManagementService {
     @Autowired
     public ChairManagementService(
             JpaChairRepository chairRepository,
-            @Value("${chairfront.location}") String chairfront,
-            ExecutorService executorService,
             MessageProducerService producerService) {
         this.chairRepository = chairRepository;
-        this.chairfrontLocation = "http://"+chairfront;
-        this.threadPool = executorService;
         this.producerService = producerService;
         log.info("Initialized the chair service");
-        log.info("Chairfront is located at {}", chairfront);
     }
 
     public Optional<Chair> get(UUID chairId) {
@@ -87,7 +77,7 @@ public class ChairManagementService {
         Chair saved = this.chairRepository.save(target);
         log.info("Chair {} successfully saved, updating downstream...", saved.getId());
         // once saved, published a message.
-        this.producerService.emit(Topics.CHAIRS, new ChairCreated(saved.getId(), saved.getVersion(), saved.getSku(),
+        this.producerService.emit(DomainTopics.CHAIRS, new ChairCreated(saved.getId(), saved.getVersion(), saved.getSku(),
                 saved.getName(), saved.getDescription()));
 
         chairNotificationSubscribers.forEach(subscriber -> subscriber.handle(saved));
@@ -118,7 +108,7 @@ public class ChairManagementService {
             // if the save fails, it should throw an exception, causing the message production to be skipped
             log.info("Updated chair {}", toUpdate.getId());
             // once saved, publish a message
-            this.producerService.emit(Topics.CHAIRS,
+            this.producerService.emit(DomainTopics.CHAIRS,
                     new ChairUpdated(toUpdate.getId(), toUpdate.getVersion(),
                             toUpdate.getSku(), toUpdate.getName(),
                             toUpdate.getDescription())

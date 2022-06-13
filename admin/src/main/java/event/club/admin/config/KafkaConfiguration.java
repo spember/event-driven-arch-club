@@ -1,6 +1,6 @@
 package event.club.admin.config;
 
-import event.club.chair.messaging.Topics;
+import event.club.chair.messaging.DomainTopics;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -85,7 +85,7 @@ public class KafkaConfiguration {
 
     @Bean
     public NewTopic chairUpdatesTopic() {
-        return TopicBuilder.name(Topics.CHAIRS)
+        return TopicBuilder.name(DomainTopics.CHAIRS)
                 .partitions(3)
                 .replicas(1)
                 .build();

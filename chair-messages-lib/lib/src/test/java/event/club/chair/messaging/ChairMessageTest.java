@@ -7,6 +7,7 @@ import event.club.chair.messaging.messages.ChairUpdated;
 import event.club.chair.messaging.messages.DomainMessage;
 import event.club.chair.messaging.support.InMemoryTestChairMessageConsumer;
 import event.club.chair.messaging.support.ObjectMapperParameterResolver;
+import event.club.chair.messaging.support.RegistryResolver;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -21,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 /**
  * Adding a simple test as it seems impolite not too.
  */
-@ExtendWith(ObjectMapperParameterResolver.class)
+@ExtendWith({ObjectMapperParameterResolver.class, RegistryResolver.class})
 public class ChairMessageTest {
 
     @Test
@@ -38,8 +39,8 @@ public class ChairMessageTest {
     }
 
     @Test
-    void registerAndParseShouldWork(ObjectMapper objectMapper) throws JsonProcessingException {
-        InMemoryTestChairMessageConsumer consumer = new InMemoryTestChairMessageConsumer(objectMapper.reader());
+    void registerAndParseShouldWork(ObjectMapper objectMapper, MessageTypeRegistry registry) throws JsonProcessingException {
+        InMemoryTestChairMessageConsumer consumer = new InMemoryTestChairMessageConsumer(objectMapper.reader(), registry);
         List<DomainMessage> captured = new ArrayList<>();
         consumer.register("foo-bar", ChairCreated.class, captured::add);
 

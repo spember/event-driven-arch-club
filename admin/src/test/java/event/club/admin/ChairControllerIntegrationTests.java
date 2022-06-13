@@ -7,7 +7,7 @@ import event.club.admin.repositories.JpaChairRepository;
 import event.club.admin.services.ChairManagementService;
 import event.club.admin.services.messaging.MessageConsumerService;
 import event.club.admin.support.BaseSpringIntegrationTest;
-import event.club.chair.messaging.Topics;
+import event.club.chair.messaging.DomainTopics;
 import event.club.chair.messaging.messages.ChairCreated;
 import event.club.chair.messaging.messages.ChairUpdated;
 import org.junit.jupiter.api.BeforeEach;
@@ -49,7 +49,7 @@ public class ChairControllerIntegrationTests extends BaseSpringIntegrationTest {
         String description = "This is one great chair!";
 
         CountDownLatch latch = new CountDownLatch(1); // expecting one notification;
-        messageConsumerService.register(Topics.CHAIRS, ChairCreated.class, event -> latch.countDown());
+        messageConsumerService.register(DomainTopics.CHAIRS, ChairCreated.class, event -> latch.countDown());
 
         Chair tested = this.restTemplate.postForObject(localUrl(), new CreateChairCommand(
                 sku,
@@ -82,7 +82,7 @@ public class ChairControllerIntegrationTests extends BaseSpringIntegrationTest {
 
         CountDownLatch latch = new CountDownLatch(2); // expecting one notification;
 
-        messageConsumerService.register(Topics.CHAIRS, ChairUpdated.class, event -> latch.countDown());
+        messageConsumerService.register(DomainTopics.CHAIRS, ChairUpdated.class, event -> latch.countDown());
 
         Chair tested = this.restTemplate.postForObject(localUrl(), new CreateChairCommand(
                 sku,

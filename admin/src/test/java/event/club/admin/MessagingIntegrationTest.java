@@ -3,7 +3,7 @@ package event.club.admin;
 import event.club.admin.services.messaging.MessageConsumerService;
 import event.club.admin.services.messaging.MessageProducerService;
 import event.club.admin.support.BaseSpringIntegrationTest;
-import event.club.chair.messaging.Topics;
+import event.club.chair.messaging.DomainTopics;
 import event.club.chair.messaging.messages.ChairCreated;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,7 +31,7 @@ public class MessagingIntegrationTest extends BaseSpringIntegrationTest {
         // http://cloudurable.com/blog/kafka-tutorial-kafka-consumer/index.html
         // however, for the sake of time - and that the service always has a no-op consumer for its own topics -
         // we'll just reuse that
-        consumerService.register(Topics.CHAIRS, ChairCreated.class, value -> {
+        consumerService.register(DomainTopics.CHAIRS, ChairCreated.class, value -> {
             latch.countDown();
             assertEquals(newChairId, value.getId());
         });
@@ -44,7 +44,7 @@ public class MessagingIntegrationTest extends BaseSpringIntegrationTest {
                 "This is a great chair"
         );
 
-        producerService.emit(Topics.CHAIRS, created);
+        producerService.emit(DomainTopics.CHAIRS, created);
         latch.await(1000, TimeUnit.MILLISECONDS);
         assertEquals(0, latch.getCount());
     }
