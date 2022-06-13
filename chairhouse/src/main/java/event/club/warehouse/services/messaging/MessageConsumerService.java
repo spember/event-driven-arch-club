@@ -1,12 +1,13 @@
 package event.club.warehouse.services.messaging;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectReader;
 import event.club.chair.messaging.BaseChairMessageConsumer;
-import event.club.chair.messaging.Topics;
+import event.club.chair.messaging.DomainTopics;
+import event.club.chair.messaging.MessageHeaders;
+import event.club.chair.messaging.MessageTypeRegistry;
+import org.apache.kafka.clients.admin.NewTopic;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.kafka.clients.admin.NewTopic;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.messaging.handler.annotation.Header;
@@ -25,12 +26,12 @@ public class MessageConsumerService extends BaseChairMessageConsumer {
     private static Logger log = LoggerFactory.getLogger(MessageConsumerService.class);
 
     @Autowired
-    public MessageConsumerService(ObjectMapper objectMapper) {
-        super(objectMapper.reader());
+    public MessageConsumerService(ObjectMapper objectMapper, MessageTypeRegistry messageTypeRegistry) {
+        super(objectMapper.reader(), messageTypeRegistry);
     }
 
-    @KafkaListener(topics = event.club.chair.messaging.Topics.CHAIRS)
-    public void listenForChairUpdates(@Header(Topics.HEADER) String clazz, @Payload String message) {
+    @KafkaListener(topics = DomainTopics.CHAIRS)
+    public void listenForChairUpdates(@Header(MessageHeaders.CLASS) String clazz, @Payload String message) {
         if (clazz == null || clazz.isEmpty()) {
             log.error("Received a message with no Message class in Header");
             return;

@@ -1,6 +1,6 @@
 package event.club.warehouse.services;
 
-import event.club.chair.messaging.Topics;
+import event.club.chair.messaging.DomainTopics;
 import event.club.chair.messaging.messages.ChairCreated;
 import event.club.chair.messaging.messages.ChairUpdated;
 import event.club.warehouse.domain.Chair;
@@ -36,8 +36,8 @@ public class ChairManagementService {
         this.consumerService = consumerService;
         // register Observers, subscribe to incoming messages
 
-        this.consumerService.register(Topics.CHAIRS, ChairCreated.class, this::handleCreate);
-        this.consumerService.register(Topics.CHAIRS, ChairUpdated.class, this::handleUpdate);
+        this.consumerService.register(DomainTopics.CHAIRS, ChairCreated.class, this::handleCreate);
+        this.consumerService.register(DomainTopics.CHAIRS, ChairUpdated.class, this::handleUpdate);
         log.info("Initialized the chair service");
     }
 

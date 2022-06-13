@@ -2,7 +2,9 @@ package event.club.chairfront.services.messaging;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import event.club.chair.messaging.BaseChairMessageConsumer;
-import event.club.chair.messaging.Topics;
+import event.club.chair.messaging.DomainTopics;
+import event.club.chair.messaging.MessageHeaders;
+import event.club.chair.messaging.MessageTypeRegistry;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,12 +26,12 @@ public class MessageConsumerService extends BaseChairMessageConsumer {
     private static Logger log = LoggerFactory.getLogger(MessageConsumerService.class);
 
     @Autowired
-    public MessageConsumerService(ObjectMapper objectMapper) {
-        super(objectMapper.reader());
+    public MessageConsumerService(ObjectMapper objectMapper, MessageTypeRegistry registry) {
+        super(objectMapper.reader(), registry);
     }
 
-    @KafkaListener(topics = Topics.CHAIRS)
-    public void listenForChairUpdates(@Header(Topics.HEADER) String clazz, @Payload String message) {
+    @KafkaListener(topics = DomainTopics.CHAIRS)
+    public void listenForChairUpdates(@Header(MessageHeaders.CLASS) String clazz, @Payload String message) {
         if (clazz == null || clazz.isEmpty()) {
             log.error("Received a message with no Message class in Header");
             return;

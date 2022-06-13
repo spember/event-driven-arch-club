@@ -1,7 +1,6 @@
 package event.club.warehouse;
 
-import event.club.chair.messaging.InternalNotificationSubscriber;
-import event.club.chair.messaging.Topics;
+import event.club.chair.messaging.DomainTopics;
 import event.club.chair.messaging.messages.ChairCreated;
 import event.club.chair.messaging.messages.ChairUpdated;
 import event.club.warehouse.domain.Chair;
@@ -17,7 +16,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertTrue;
 
 public class MessagingIntegrationTest extends BaseSpringIntegrationTest {
 
@@ -32,9 +30,9 @@ public class MessagingIntegrationTest extends BaseSpringIntegrationTest {
 
         CountDownLatch latch = new CountDownLatch(1);
 
-        consumerService.register(Topics.CHAIRS, ChairCreated.class, value -> latch.countDown());
+        consumerService.register(DomainTopics.CHAIRS, ChairCreated.class, value -> latch.countDown());
         UUID chairId = UUID.randomUUID();
-        producerService.emit(Topics.CHAIRS, new ChairCreated(
+        producerService.emit(DomainTopics.CHAIRS, new ChairCreated(
                 chairId,
                 1,
                 "CH-0123",
@@ -53,11 +51,11 @@ public class MessagingIntegrationTest extends BaseSpringIntegrationTest {
     @Test
     void updatingShouldBeGreat() throws InterruptedException {
         CountDownLatch latch = new CountDownLatch(3);
-        consumerService.register(Topics.CHAIRS, ChairCreated.class, value -> latch.countDown());
-        consumerService.register(Topics.CHAIRS, ChairUpdated.class, value -> latch.countDown());
+        consumerService.register(DomainTopics.CHAIRS, ChairCreated.class, value -> latch.countDown());
+        consumerService.register(DomainTopics.CHAIRS, ChairUpdated.class, value -> latch.countDown());
 
         UUID chairId = UUID.randomUUID();
-        producerService.emit(Topics.CHAIRS, new ChairCreated(
+        producerService.emit(DomainTopics.CHAIRS, new ChairCreated(
                 chairId,
                 1,
                 "CH-9999",
@@ -65,7 +63,7 @@ public class MessagingIntegrationTest extends BaseSpringIntegrationTest {
                 "Chairs are life"
         ));
 
-        producerService.emit(Topics.CHAIRS, new ChairUpdated(
+        producerService.emit(DomainTopics.CHAIRS, new ChairUpdated(
                 chairId,
                 2,
                 "CH-9999",
@@ -73,7 +71,7 @@ public class MessagingIntegrationTest extends BaseSpringIntegrationTest {
                 "Chairs are life"
         ));
 
-        producerService.emit(Topics.CHAIRS, new ChairCreated(
+        producerService.emit(DomainTopics.CHAIRS, new ChairCreated(
                 chairId,
                 3,
                 "CH-9999",
