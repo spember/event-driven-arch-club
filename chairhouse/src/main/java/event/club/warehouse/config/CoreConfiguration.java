@@ -9,6 +9,7 @@ public class CoreConfiguration {
 
     @Bean
     public MessageTypeRegistry provideRegistry() {
-        return new MessageTypeRegistry("event.club");
+        return new MessageTypeRegistry("event.club.chair.messaging",
+                "event.club.warehouse.services.messaging.messages");
     }
 }

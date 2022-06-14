@@ -81,15 +81,13 @@ public abstract class BaseChairMessageConsumer {
      * @param message
      */
     protected <T extends DomainMessage> Optional<T> parse(String messageClassToLoad, String message) {
-        // we use Optional to signal the fact that this thing may fail
-        log.info("Received: {}", message);
+        // this message should be a debug in real life
+        log.info("Received message: {} with class {}", message, messageClassToLoad);
         try {
             T hydratedMessage = (T) objectReader.readValue(
                     message,
                     this.getClass().getClassLoader().loadClass(messageClassToLoad));
-            log.info("Received message {}", hydratedMessage);
             return Optional.of(hydratedMessage);
-
         } catch (IOException e) {
             log.error("Failed to process message", e);
         } catch (ClassNotFoundException e) {

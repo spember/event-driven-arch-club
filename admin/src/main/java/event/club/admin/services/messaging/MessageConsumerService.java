@@ -35,7 +35,6 @@ public class MessageConsumerService extends BaseChairMessageConsumer {
 
     @KafkaListener(topics = DomainTopics.CHAIRS)
     public void listenForChairUpdates(@Header(MessageHeaders.CLASS) String clazz, @Payload String message) {
-        
         this.handleDelivery(DomainTopics.CHAIRS, clazz, message);
     }
 }

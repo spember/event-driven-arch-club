@@ -4,10 +4,13 @@ import event.club.chair.messaging.exceptions.RegistryCollisionException;
 import event.club.chair.messaging.messages.DomainMessage;
 import event.club.chair.messaging.messages.HeaderInfo;
 import org.reflections.Reflections;
+import org.reflections.util.ClasspathHelper;
+import org.reflections.util.ConfigurationBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,9 +32,14 @@ public class MessageTypeRegistry {
 
     private static Logger log = LoggerFactory.getLogger(MessageTypeRegistry.class);
 
-    public MessageTypeRegistry(String packageName) {
-        findEventClassesInPackageHierarchy(packageName)
-                .forEach(this::register);
+    public MessageTypeRegistry(String... packageNames) {
+        Arrays.stream(packageNames).forEach(packageName -> {
+                    log.info("Scanning package {}", packageName);
+                    findEventClassesInPackageHierarchy(packageName)
+                            .forEach(this::register);
+                }
+        );
+
         log.info("Domain Message Registry loaded with {} messages", classToAliasLookup.size());
     }
 
@@ -44,13 +52,15 @@ public class MessageTypeRegistry {
     }
 
     public void register(Class<? extends DomainMessage> potentialMessageClass) {
+        log.debug("Registering Message {}", potentialMessageClass);
         addToAliasLookup(potentialMessageClass); //if there's an alias mismatch this should trip first
         addToClassLookup(potentialMessageClass);
     }
 
 
     private Set<Class<? extends DomainMessage>> findEventClassesInPackageHierarchy(String packagePath) {
-        return new Reflections(packagePath).getSubTypesOf(DomainMessage.class);
+        return new Reflections(new ConfigurationBuilder()
+                .setUrls(ClasspathHelper.forPackage(packagePath))).getSubTypesOf(DomainMessage.class);
     }
 
     private <DM extends DomainMessage> void addToAliasLookup(Class<DM> domainClass) {
