@@ -66,57 +66,32 @@ $ minikube config set cpus < maybe more than 1?>
 $ minikube start
 ```
 
----
-
-
-## Current Situation: 02 - Making More Robust Consumers And Scaling Workloads
-
-Great news! Work is coming along in our Decoupling Journey. We know have both Chairfront and Chairhouse listening for Create and Update messages regarding Chair types which are asynchronously being written to Kafka topics by the Admin service. Yes, that means there is now an 'update' controller endpoint in Admin that one can use to manipulate an existing Chair.
-
-Additionally, our engineers have noticed that they created a good deal of repeatable code. They've extracted some of this into a new, shared library called `chair-messages-lib`. _Note_: new users will need to get in the habit of "publishing to maven local" (`./gradlew pTML`) to make use of it. This library is meant to force a common approach to communication (e.g. set headers in Kafka messages) AND contain common message classes. We're excited to see where this goes!
-
-
-### Scenario:
-
-Even though we've just entered into the world of Kafka Messages, Publishers, and Consumers... our team is getting nervous. Things seem fine for now with our two messages, but concerns are being raised. Is it true that Messages can be re-delivered? What is this 'Idempotent' word we've heard about? An engineer just asked me if they could change the name of a Message; is that a good idea?
-
-As an added concern, our warehouse just received a large shipment of instances of Chairs. This would normally be good news but 1) we forgot to add pricing details on each record and 2) our Chairfront app doesn't know about this inventory! This process would take a while if we did it in one big push, can we somehow make use of Messages here?
-
-### Task at hand:
-
-
-_Basic Challenge_: Let's make our Message Consumption more robust. We're very worried about processing messages more than once, and are concerned about potential Message versioning.
-
-1. Devise an approach for Chairhouse and Chairfront such that they would ignore / skip Messages for Chair types that they've already seen before. There exists base code to start down the path of using `version`, but other approaches are valid. 
-1. Create a design for 'aliasing' Messages. Currently, the shared library is relying on the `className`  of the Message. This is straightforward, but also very brittle. What happens if someone renames a Message or moves it within packages? A better solution is to create one or more aliases for individual shared Message classes. There are multiple ways to accomplish this, including a hard-coded lookup table or declarative discovery on application startup (java annotations are good for this, can be discovered during a classpath scan). Note: this will almost certainly involve updating the shared library such that the other apps can make use of your aliasing.
-1. Bonus Points: explore expanding your Message Consumer classes such that they map the shared Message class into some internally understand class unique to the Service.
-
-_Advanced Challenge_: Uh Oh! We've discovered that we have over a hundred chairs in our inventory currently and they're all priced at $0. Why do we have individual prices set for each inventory item? Shhhhh just ignore that for now. Anyway, we'll need to go through the process of updating all of the prices for the Inventory items for a given Chair. We unfortunately cannot just use a single SQL update right now, we're forced to call into our (simulated) Pricing Service by utilizing the `event.club.warehouse.repositories.ExternalPricingRepository`, which will take a second or two to function. It also doesn't support batch so we have to go one at a time. 
-
-While we work with that team to fix how pricing works, we unfortunately need to do the following: 
-
-1. Create an entry point into ChairHouse which will 'kick off' the work. We need to discover all of the Inventory `Serials` for a given chair type (we can use `event.club.warehouse.services.InventoryManagementService#loadAllSerialsForChair`).
-1. Using these serials, publish messages - either singularly or in batches - to a Topic consumed just by ChairHouse. In effect, chairhouse is publishing to itself.
-1. Update the Consumer to read these Messages, load the Inventory items by their `serial` value, and update the price using the `event.club.warehouse.services.InventoryManagementService#recalculatePrice` method. This will persist the inventory as well.
-
-This effectively breaks up a long-running task (recalculating pricing) into small, stateless chunks which can picked up and worked on by any instance of ChairHouse. _Bonus Points_: scale up ChairHouse before running.
-
 
 ---
 
 ## Current Situation 03 - Query Models & CQRS
 
+Alright, things are starting to hum along here at the Chair Company. We've got some messages firing on Kafka, and we can asynchronously recalculate pricing on our Inventory. Inventory, in this case is the individual, actual 'instances' of Chairs sitting in our warehouse with their own serial numbers, lifecycles, etc.
+
+Hmm... Inventory. Now that you mention it, we should probably start having Inventory reflected in Chairfront. Our customer's cannot buy anything, as Chairfront always reports 0 inventory for our Chairs. That's a problem.
+
+### Task at hand:
+
+This week we're going to update Chairfront such that it is a customer-facing, downstream recipient of messages from _both_ Admin and Chairhouse. This will effectively make it a Query Model, whose state is derived from the actions which occur in our "Source of Truth" systems.
+
+
 _Basic Challenge_: 
-
-* Commands go to 'ship' chairs, query Chairfront to see the current inventory state.
-
-* Query Model in Chairfront that listens for updates and 
+* Update Chairhouse such that it can accept Commands to Receive new inventory or Ship existing inventory to customers, and then publish Messages about what's happening. 
+* One may want to create a new Kafka Topic for inventory.
+* Update Chairfront to take not of these messages and adjust the inventory accordingly.
 * Chairfront, at this point, is just a big Query Model for data coming from Admin and Chairhouse. This will change next time!
 
 
 _Advanced Challenge_
 
-* Chairfront is listening for messages from Chairfront, but due to the nature of the Kafka journal, it may be that we re-read the journal and end up with messages more than once. There are few techinques to alleviate this; for example: Chairfront could track updates by inventory item for a short while, or it could routinely (say, every hour) check the current inventory state with Chairhouse.
+Chairfront is listening for messages from Chairfront, but due to the nature of the Kafka journal, it may be that we re-read the journal and end up with messages more than once. This is a problem, as the Inventory's `revision` is specific to the Inventory, not the Chair. Because Chairfront is treating inventory count as a static field on the Chair (and not tracking individual inventory objects like the warehouse), the Domain Driven Design term is that Inventory is a Value Object at best from Chairfront's perspective. This makes 'replays' tricky.
+
+* ___Investigate and Implement a solution to deal with this!___ There are few techniques to alleviate this; for example: Chairfront could track updates by inventory item for a short while, or it could routinely (say, every hour) check the current inventory state with Chairhouse.
 
 
 
