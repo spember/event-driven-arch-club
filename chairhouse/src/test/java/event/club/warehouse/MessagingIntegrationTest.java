@@ -42,7 +42,7 @@ public class MessagingIntegrationTest extends BaseSpringIntegrationTest {
         latch.await(1000, TimeUnit.MILLISECONDS);
         assertEquals(0, latch.getCount());
 
-        Chair newChair = this.restTemplate.getForObject(localUrl() +"/" + chairId, Chair.class);
+        Chair newChair = this.restTemplate.getForObject(baseChairsUrl() +"/" + chairId, Chair.class);
         assertEquals(chairId, newChair.getId());
         assertEquals(1, newChair.getVersion());
         assertEquals("My first Chair", newChair.getName());
@@ -82,7 +82,7 @@ public class MessagingIntegrationTest extends BaseSpringIntegrationTest {
         latch.await(1000, TimeUnit.MILLISECONDS);
         assertEquals(0, latch.getCount());
 
-        Chair newChair = this.restTemplate.getForObject(localUrl() +"/" + chairId, Chair.class);
+        Chair newChair = this.restTemplate.getForObject(baseChairsUrl() +"/" + chairId, Chair.class);
         assertEquals(chairId, newChair.getId());
         assertEquals(3, newChair.getVersion());
     }

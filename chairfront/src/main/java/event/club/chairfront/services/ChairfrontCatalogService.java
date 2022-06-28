@@ -3,6 +3,9 @@ package event.club.chairfront.services;
 import event.club.chair.messaging.DomainTopics;
 import event.club.chair.messaging.messages.ChairCreated;
 import event.club.chair.messaging.messages.ChairUpdated;
+import event.club.chair.messaging.messages.inventory.InventoryAdded;
+import event.club.chair.messaging.messages.inventory.InventoryPurchased;
+import event.club.chair.messaging.messages.inventory.InventoryRestocked;
 import event.club.chairfront.domain.Chair;
 import event.club.chairfront.http.UpdateChairFromUpstreamCommand;
 import event.club.chairfront.repositories.JpaChairRepository;
@@ -16,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 @Service
 public class ChairfrontCatalogService {
@@ -33,6 +37,10 @@ public class ChairfrontCatalogService {
 
         this.consumerService.register(DomainTopics.CHAIRS, ChairCreated.class, this::create);
         this.consumerService.register(DomainTopics.CHAIRS, ChairUpdated.class, this::update);
+
+        this.consumerService.register(DomainTopics.INVENTORY, InventoryAdded.class, this::increaseInventory);
+        this.consumerService.register(DomainTopics.INVENTORY, InventoryRestocked.class, this::increaseInventory);
+        this.consumerService.register(DomainTopics.INVENTORY, InventoryPurchased.class, this::decreaseInventory);
 
     }
 
@@ -95,6 +103,26 @@ public class ChairfrontCatalogService {
                 message.getDescription(),
                 0
         ));
+    }
+
+    public void increaseInventory(InventoryAdded message) {
+        updateInventory(message.getChairId(), (chair) -> chair.setUnitsOnHand(chair.getUnitsOnHand()+1));
+    }
+
+    public void increaseInventory(InventoryRestocked message) {
+        updateInventory(message.getChairId(), (chair) -> chair.setUnitsOnHand(chair.getUnitsOnHand()+1));
+    }
+
+    public void decreaseInventory(InventoryPurchased message) {
+        this.updateInventory(message.getChairId(), (chair) -> chair.setUnitsOnHand(chair.getUnitsOnHand()-1));
+    }
+
+    private void updateInventory(UUID chairId, Consumer<Chair> handler) {
+        Optional<Chair> maybeChair =  this.chairRepository.findById(chairId);
+        maybeChair.ifPresent(chair -> {
+            handler.accept(chair);
+            this.chairRepository.save(chair);
+        });
     }
 
 }

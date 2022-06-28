@@ -6,4 +6,5 @@ package event.club.chair.messaging;
 public final class DomainTopics {
 
     public static final String CHAIRS = "chair-updates";
+    public static final String INVENTORY = "inventory-updates";
 }

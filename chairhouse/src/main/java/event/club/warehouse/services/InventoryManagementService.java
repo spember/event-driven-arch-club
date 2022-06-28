@@ -1,5 +1,9 @@
 package event.club.warehouse.services;
 
+import event.club.chair.messaging.DomainTopics;
+import event.club.chair.messaging.messages.inventory.InventoryAdded;
+import event.club.chair.messaging.messages.inventory.InventoryPurchased;
+import event.club.chair.messaging.messages.inventory.InventoryRestocked;
 import event.club.warehouse.domain.Inventory;
 import event.club.warehouse.repositories.ExternalPricingRepository;
 import event.club.warehouse.repositories.InventorySerialsOnly;
@@ -17,10 +21,14 @@ import org.springframework.stereotype.Service;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.PersistenceUnit;
 import javax.persistence.Query;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 /**
@@ -107,6 +115,7 @@ public class InventoryManagementService {
             log.warn("Price already set for item {} -> {}", item.getSerial(), item.getCurrentPrice());
         } else {
             item.setCurrentPrice(updatedPrice.get());
+            item.setVersion(item.getVersion()+1);
             jpaInventoryRepository.save(item);
             log.info("Price updated for item {} -> {}", item.getSerial(), item.getCurrentPrice());
         }
@@ -153,6 +162,86 @@ public class InventoryManagementService {
 
         } else {
             this.recalculatePrice(maybeInventory.get());
+        }
+    }
+
+
+    /**
+     * Adds a new item to our warehouse
+     *
+     *
+     * @param chairId
+     * @param serial
+     */
+    public void storeNewItem(UUID chairId, String serial) {
+        log.info("Adding new item ({}) to our inventory for  chair id {}", serial, chairId);
+        // public Inventory(String serial, UUID chairId, int version, Instant arrived, Instant purchased, Instant shipped) {
+        Inventory newItem = new Inventory(serial, chairId, 1, Instant.now(), null, null);
+        // recalculating the price also saves the item
+        recalculatePrice(newItem);
+        // emit
+        producerService.emit(DomainTopics.INVENTORY, new InventoryAdded(
+                newItem.getSerial(),
+                newItem.getChairId(),
+                newItem.getCurrentPrice(),
+                newItem.getVersion()
+        ));
+
+    }
+
+
+    /**
+     * Marks an item as 'purchased' or reserved. It hasn't been shipped yet, but it cannot be 'sold' again.
+     *
+     */
+    public void reserveItem(String serial) {
+        updateInventoryIfAvailable(serial, (inventory) -> {
+            inventory.setPurchased(Instant.now());
+            return inventory;
+        }, (saved) -> {
+            producerService.emit(DomainTopics.INVENTORY, new InventoryPurchased(
+                    saved.getSerial(),
+                    saved.getChairId(),
+                    saved.getCurrentPrice(),
+                    saved.getVersion()
+
+            ));
+        });
+    }
+
+    /**
+     * Called when a Chair has been 'restocked' whether due to order cancellation or returns
+     *
+     * @param serial
+     */
+    public void restockItem(String serial) {
+        updateInventoryIfAvailable(serial, (inventory) -> {
+            inventory.setPurchased(null);
+            return inventory;
+        }, (saved) -> {
+            producerService.emit(DomainTopics.INVENTORY, new InventoryRestocked(
+                    saved.getSerial(),
+                    saved.getChairId(),
+                    saved.getCurrentPrice(),
+                    saved.getVersion()
+            ));
+
+        });
+    }
+
+    private void updateInventoryIfAvailable(String serial,
+                                            Function<Inventory, Inventory> updater,
+                                            Consumer<Inventory> postSave
+    ) {
+        Optional<Inventory> maybeInventory =  jpaInventoryRepository.findById(serial);
+        // in real life, through an error to trigger a 404, for example
+        if (maybeInventory.isEmpty()) {
+            throw new NoSuchElementException("Unknown inventory with serial " + serial);
+        } else {
+            Inventory toSave = updater.apply(maybeInventory.get());
+            toSave.setVersion(maybeInventory.get().getVersion()+1);
+            jpaInventoryRepository.save(toSave);
+            postSave.accept(toSave);
         }
     }
 }

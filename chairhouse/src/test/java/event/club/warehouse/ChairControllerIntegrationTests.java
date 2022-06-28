@@ -3,19 +3,14 @@ package event.club.warehouse;
 import event.club.chair.messaging.messages.ChairCreated;
 import event.club.warehouse.domain.Chair;
 import event.club.warehouse.domain.Inventory;
-import event.club.warehouse.repositories.InventorySerialsOnly;
-import event.club.warehouse.repositories.JpaChairRepository;
 import event.club.warehouse.repositories.JpaInventoryRepository;
 import event.club.warehouse.services.ChairManagementService;
 import event.club.warehouse.services.InventoryManagementService;
-import event.club.warehouse.services.messaging.MessageConsumerService;
-import event.club.warehouse.services.messaging.MessageProducerService;
 import event.club.warehouse.support.BaseSpringIntegrationTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.Instant;
-import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -39,7 +34,7 @@ public class ChairControllerIntegrationTests extends BaseSpringIntegrationTest {
 
     @Test
     public void testChairsAreSeeded() {
-        Chair[] chairs = this.restTemplate.getForObject(localUrl(), Chair[].class);
+        Chair[] chairs = this.restTemplate.getForObject(baseChairsUrl(), Chair[].class);
         assertTrue(chairs.length > 0);
         UUID bakedId = UUID.fromString("25d5c2a7-8fdc-496d-a335-618d3c6e27b9");
         List<Inventory> myChairs = this.inventoryManagementService.loadAllForChair(

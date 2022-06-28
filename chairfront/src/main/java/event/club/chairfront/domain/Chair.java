@@ -76,4 +76,8 @@ public class Chair {
     public int getUnitsOnHand() {
         return unitsOnHand;
     }
+
+    public void setUnitsOnHand(int unitsOnHand) {
+        this.unitsOnHand = unitsOnHand;
+    }
 }

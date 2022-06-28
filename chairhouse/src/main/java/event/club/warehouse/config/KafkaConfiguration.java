@@ -93,6 +93,14 @@ public class KafkaConfiguration {
     }
 
     @Bean
+    public NewTopic inventoryUpdatesTopic() {
+        return TopicBuilder.name(DomainTopics.INVENTORY)
+                .partitions(3)
+                .replicas(1)
+                .build();
+    }
+
+    @Bean
     public NewTopic internalWorkTopic() {
         return TopicBuilder.name(InternalTopics.WAREHOUSE_WORK)
                 .partitions(5)

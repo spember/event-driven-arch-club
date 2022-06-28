@@ -37,8 +37,12 @@ public abstract class BaseSpringIntegrationTest {
     @Container
     public static SpringKafkaContainer springKafkaContainer = SpringKafkaContainer.getInstance();
 
-    protected String localUrl() {
-        return "http://localhost:" + port+"/chairs";
+    protected String baseChairsUrl() {
+        return baseUrl() + "/chairs";
+    }
+
+    protected String baseUrl() {
+        return "http://localhost:" + port;
     }
 
 
