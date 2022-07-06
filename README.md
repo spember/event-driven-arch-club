@@ -66,34 +66,39 @@ $ minikube config set cpus < maybe more than 1?>
 $ minikube start
 ```
 
-
 ---
 
-## Current Situation 03 - Query Models & CQRS
+## Current Situation 04 - Saga Pattern
 
-Alright, things are starting to hum along here at the Chair Company. We've got some messages firing on Kafka, and we can asynchronously recalculate pricing on our Inventory. Inventory, in this case is the individual, actual 'instances' of Chairs sitting in our warehouse with their own serial numbers, lifecycles, etc.
+Great progress! Our warehousing app can now handle receiving and reserving new inventory. Our customer-facing app, Chairfront, now listens for messages coming from ChairHouse in order to update it's inventory counts.
 
-Hmm... Inventory. Now that you mention it, we should probably start having Inventory reflected in Chairfront. Our customer's cannot buy anything, as Chairfront always reports 0 inventory for our Chairs. That's a problem.
+Now, though, we need to start taking Orders. Our engineers have warned us that we need to spend some time and make the Order Processing operate asynchronously via messages, in order to handle any anticipated scale. This basically means that we can't put all of the operations inside of Chairfront. So what do we do!?
 
-### Task at hand:
+### 
 
-This week we're going to update Chairfront such that it is a customer-facing, downstream recipient of messages from _both_ Admin and Chairhouse. This will effectively make it a Query Model, whose state is derived from the actions which occur in our "Source of Truth" systems.
+Let's implement a Saga. A Saga is - basically - constructing a sequential pipeline of steps between microservices, where the messages emitted signal "It's OK to proceed with the next step", or "there was an error with this Saga". Participants in the saga listen just for messages for the step they belong to, or errors. Other messages may be seen but are discarded / 'accepted and ignored'. All Participants know how to roll back their piece of the Saga, if appropriate, on an error. Saga Messages tend to be either _named_ using their stage (e.g. `ProcessOrderStage2`) or have the stage encoded as a header.
 
+We have several steps we need to accomplish in our Order Processing Saga:
 
-_Basic Challenge_: 
-* Update Chairhouse such that it can accept Commands to Receive new inventory or Ship existing inventory to customers, and then publish Messages about what's happening. 
-* One may want to create a new Kafka Topic for inventory.
-* Update Chairfront to take not of these messages and adjust the inventory accordingly.
-* Chairfront, at this point, is just a big Query Model for data coming from Admin and Chairhouse. This will change next time!
+1. Receive payload from Customer, perform minor validation (i.e. ensure fields are not empty)
+1. Reserve an inventory item from the Warehouse
+1. Process Payment* 
+1. Send Confirmation Notification*
+1. Ship the reserved inventory (in reality this might occur after some time, but our warehouse folks are very fast)
 
-
-_Advanced Challenge_
-
-Chairfront is listening for messages from Chairfront, but due to the nature of the Kafka journal, it may be that we re-read the journal and end up with messages more than once. This is a problem, as the Inventory's `revision` is specific to the Inventory, not the Chair. Because Chairfront is treating inventory count as a static field on the Chair (and not tracking individual inventory objects like the warehouse), the Domain Driven Design term is that Inventory is a Value Object at best from Chairfront's perspective. This makes 'replays' tricky.
-
-* ___Investigate and Implement a solution to deal with this!___ There are few techniques to alleviate this; for example: Chairfront could track updates by inventory item for a short while, or it could routinely (say, every hour) check the current inventory state with Chairhouse.
+> * note that, as a toy app, some of these steps should be simulated
 
 
+Normally we might create an Order Service to track the Saga. For the sake of time, we'll overload Admin service's responsibilities to handle this, for now.
 
+_Basic and Advanced Challenge_
 
+A big one, this time. This practice will involve the following steps, in no particular order:
+
+* Create Endpoint in Chairfront to receive an 'Order' payload from the Customer. (Chairfront, after all, is the Customer-facing portion). This stage should also generate an ID for the Order (in reality we might have some 'ticketing' or Order ID generation endpoint to call)
+* Add Saga messages in the shared library
+* Add Order entity to Admin
+* Publish Messages according to the stages, listed above
+* Create consumers to operate on each stage
+* Add consumers in Admin which update the progress of the Order on each message (Observability!)
 
