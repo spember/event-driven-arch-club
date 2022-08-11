@@ -42,10 +42,6 @@ public class KafkaConfiguration {
         return new DefaultKafkaProducerFactory<>(configProps);
     }
 
-    @Bean
-    public KafkaTemplate<String, String> kafkaTemplate(ProducerFactory<String, String> producerFactory) {
-        return new KafkaTemplate<>(producerFactory);
-    }
 
     @Bean
     public ConsumerFactory<String, String> consumerFactory(@Value("${kafka.bootstrap}") final String bootstrapServers) {
@@ -66,6 +62,19 @@ public class KafkaConfiguration {
     }
 
     @Bean
+    public KafkaAdmin kafkaAdmin(@Value("${kafka.bootstrap}") final String bootstrapServers) {
+        Map<String, Object> configs = new HashMap<>();
+        configs.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        return new KafkaAdmin(configs);
+    }
+
+
+    @Bean
+    public KafkaTemplate<String, String> kafkaTemplate(ProducerFactory<String, String> producerFactory) {
+        return new KafkaTemplate<>(producerFactory);
+    }
+
+    @Bean
     public ConcurrentKafkaListenerContainerFactory<String, String> kafkaListenerContainerFactory(
             ConsumerFactory<String, String> consumerFactory
     ) {
@@ -76,12 +85,7 @@ public class KafkaConfiguration {
     }
 
 
-    @Bean
-    public KafkaAdmin kafkaAdmin(@Value("${kafka.bootstrap}") final String bootstrapServers) {
-        Map<String, Object> configs = new HashMap<>();
-        configs.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        return new KafkaAdmin(configs);
-    }
+
 
     @Bean
     public NewTopic chairUpdatesTopic() {
