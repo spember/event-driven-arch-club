@@ -21,10 +21,9 @@ public class OrderProcessingService {
         this.orderRepository = orderRepository;
     }
 
-    public UUID initialize(String customerId, String productSerial) {
-        OrderTracker order = new OrderTracker(UUID.randomUUID(), customerId, productSerial);
+    public void initialize(UUID orderId, String customerId, String productSerial) {
+        OrderTracker order = new OrderTracker(orderId, customerId, productSerial);
         this.orderRepository.save(order);
-        return order.getId();
     }
 
     public Optional<OrderTracker> load(UUID orderId) {
@@ -44,6 +43,14 @@ public class OrderProcessingService {
             throw new RuntimeException("Unknown stage observed");
         }
         orderRepository.save(order);
+    }
+
+    public void markStageComplete(UUID orderId, Stage stage) {
+        Optional<OrderTracker> maybeOrder = load(orderId);
+        if (maybeOrder.isEmpty()) {
+            throw new RuntimeException("Unknown Order");
+        }
+        markStageComplete(maybeOrder.get(), stage);
     }
 
     public void complete(OrderTracker order) {
